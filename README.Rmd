@@ -1,0 +1,118 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  dpi = 300
+)
+```
+
+```{r}
+library(cccc)
+```
+
+```{r}
+data <- importData(tdm_file = "data-raw/JPSP_TITfreq.csv",
+                   corpus_file = "data-raw/JPSP_TITinfo.csv",
+                   sep_tdm = ";",
+                   sep_corpus_info = ";",
+                   zone="stat")
+```
+
+```{r}
+rowMass <- rowMassPlot(data = data)
+rowMass
+```
+
+```{r}
+colMass <- colMassPlot(data = data,
+                         sc = c(1, 10, 10, 1),
+                         r = 1,
+                         textty = "text",
+                         themety = "light",
+                         size_b = 2.5,
+                         x_lab = "years")
+colMass
+```
+
+```{r}
+curve <- curvePlot(data = data,
+                   r = 1,
+                   themety = "light",
+                   size_class = NULL,
+                   x_leg = 0.85,
+                   x_lab = "years"
+)
+curve
+```
+
+
+```{r}
+curveCtu <- curveCtuPlot(data,
+                         ctu_noun = c("person", "object", "instruct", "incident"),
+                         r = 1,
+                         themety = "light",
+                         size_class = NULL,
+                         x_lab = "year")
+curveCtu
+```
+
+```{r}
+## Normalize columns by corpus size
+data_nc <- normalization(data, normty = "nc", sc = 1000)
+head(data_nc$tdm, n=10)
+```
+
+```{r}
+## chi-square type normalization
+data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+head(data_nchi$tdm, n=10)
+```
+
+```{r}
+## max per row
+data_nM <- normalization(data, normty = "nM", sc = 1000)
+head(data_nM$tdm, n=10)
+```
+
+```{r}
+## min-max per row
+data_nmM <- normalization(data, normty = "nmM", sc = 1000)
+head(data_nmM$tdm, n=10)
+```
+
+```{r}
+## nonlinear normalization (based on asymmetry)
+data_nnl <- normalization(data, normty = "nnl", sc = 1000, nnlty="CT")
+head(data_nnl$p_asy, n=10)
+
+head(data_nnl$tdm, n=10)
+```
+
+```{r}
+curveCtu_nchi <- curveCtuPlot(data_nchi,
+                              ctu_noun = c("person", "object", "instruct", "incident"),
+                              r = 1,
+                              themety = "light",
+                              size_class = NULL,
+                              x_lab = "year")
+curveCtu_nchi
+```
+
+```{r}
+curve_nchi <- curvePlot(data = data_nchi,
+           r = 1,
+           themety = "light",
+           size_class = NULL,
+           x_leg = 0.85,
+           x_lab = "years"
+)
+curve_nchi
+```
