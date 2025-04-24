@@ -35,14 +35,13 @@ curvePlot <- function(data,
   dat_l <- dat_l %>%
     mutate(zone = factor(zone, levels = unique(zone)))
 
-
-  col_class <- setNames(data$colors, levels(dat_l$zone))
-
   if (themety == "light") {
     base_theme <- theme_classic()
+    col_class <- setNames(data$colors_light, levels(dat_l$zone))
     if (is.null(size_class)) size_class <- c(0.25, 0.35, 0.45, 0.55)
   } else {
     base_theme <- theme_dark()
+    col_class <- setNames(data$colors_dark, levels(dat_l$zone))
     if (is.null(size_class)) size_class <- c(0.4, 0.5, 0.6, 0.7)
   }
 

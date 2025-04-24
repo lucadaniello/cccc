@@ -613,3 +613,12 @@ curve_nchi
 ```
 
 <img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+
+``` r
+facet_plot <- facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+                       r = 4, scales = "free", leg = TRUE, themety = "light",
+                       size_class = NULL, x_lab = "year")
+facet_plot
+```
+
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />

@@ -3,6 +3,7 @@
 export(colMassPlot)
 export(curveCtuPlot)
 export(curvePlot)
+export(facetPlot)
 export(importData)
 export(normalization)
 export(rowMassPlot)

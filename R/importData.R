@@ -126,7 +126,8 @@ importData <- function(tdm_file, corpus_file, sep_tdm = NULL, sep_corpus_info = 
   data <- list(tdm = tdm, corpus_info = corpus_info, norm=FALSE,
                year_cols = grep("\\d", names(tdm)),
                zone=unique(tdm$zone),
-               colors=colorlist()[1:length(unique(tdm$zone))])
+               colors_light=colorlist(type="light")[1:length(unique(tdm$zone))],
+               colors_dark=colorlist(type="dark")[1:length(unique(tdm$zone))])
   data <- tdm2long(data)
   return(data)
 }

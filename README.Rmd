@@ -116,3 +116,11 @@ curve_nchi <- curvePlot(data = data_nchi,
 )
 curve_nchi
 ```
+
+```{r}
+facet_plot <- facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+                       r = 4, scales = "free", leg = TRUE, themety = "light",
+                       size_class = NULL, x_lab = "year")
+facet_plot
+```
+

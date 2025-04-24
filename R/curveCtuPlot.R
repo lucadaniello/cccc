@@ -57,18 +57,21 @@ curveCtuPlot <- function(data,
     stop(paste("Please provide exactly", n_zones, "keywords: one for each zone."))
   }
 
-  col_class <- setNames(data$colors, zone_levels)
+  if (themety=="light"){
+    col_class <- setNames(data$colors_light, zone_levels)
+    base_theme <- theme_classic()
+  } else {
+    col_class <- setNames(data$colors_dark, zone_levels)
+    base_theme <- theme_dark()
+  }
   col_class <- paste0(col_class, "70") # alpha
-
-  col_kw <- colorlist()[seq(5, 4 + n_zones)]
+  col_kw <- colorlist(type=themety)[n_zones + seq(1, n_zones)]
   names(col_kw) <- ctu_noun
 
   if (is.null(size_class)) {
     size_class <- if (themety == "light") rep(0.3, n_zones) else rep(0.5, n_zones)
   }
   names(size_class) <- zone_levels
-
-  base_theme <- if (themety == "light") theme_classic() else theme_dark()
 
   year_vec <- sort(unique(dat_l$year))
   n_y <- length(year_vec)

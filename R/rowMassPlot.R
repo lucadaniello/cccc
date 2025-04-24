@@ -29,7 +29,7 @@ rowMassPlot <- function(data) {
   g <- ggplot2::ggplot(tdm, ggplot2::aes(x = reorder(keyword, tot_freq), y = tot_freq, fill = zone_label)) +
     ggplot2::geom_bar(stat = "identity", show.legend = TRUE) +
     ggplot2::scale_fill_manual(
-      values = setNames(data$colors, levels(tdm$zone_label))
+      values = setNames(data$colors_light, levels(tdm$zone_label))
     ) +
     ggplot2::labs(
       x = "Keywords",
