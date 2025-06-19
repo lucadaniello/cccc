@@ -45,6 +45,57 @@ tdm2long <- function(data){
   return(data)
 }
 
+# panel plot for smoothing selection
+make_summary_panel <- function(summary_opt, penalty_type, normty) {
+  # Ristruttura in long format
+  df_long <- summary_opt %>%
+    pivot_longer(cols = c(df_gcv, sse, gcv_min, ocv_min),
+                 names_to = "metric", values_to = "value") %>%
+    mutate(metric = recode(metric,
+                           df_gcv = "df",
+                           sse = "sse",
+                           gcv_min = "gcv",
+                           ocv_min = "ocv"))
+
+  highlight <- df_long %>%
+    group_by(metric) %>%
+    filter(value == min(value, na.rm = TRUE)) %>%
+    slice(1) %>%
+    ungroup()
+
+  p <- ggplot(df_long, aes(x = degree, y = value)) +
+    geom_line(aes(group = 1), color = "gray40") +
+    geom_point(color = "black", size = 2) +
+    geom_point(data = highlight, aes(x = degree, y = value), color = "firebrick", size = 3) +
+    geom_hline(data = highlight, aes(yintercept = value), linetype = "dashed", color = "firebrick", linewidth = 0.4) +
+    facet_wrap(~metric, scales = "free_y", ncol = 2) +
+    labs(title = "Optimal Smoothing Summary",
+         x = "Spline degree (m)",
+         y = NULL,
+         subtitle = paste0("Penalty: ", penalty_type, " | Norm: ", normty)) +
+    theme_minimal(base_size = 11) +
+    theme(strip.text = element_text(face = "bold"))
+
+  return(p)
+}
+
+#make_temparray auxiliary function that converts the summary_optimal (or results) of smoothingSelection() into a compatible 3D array
+
+make_temparray <- function(summary_opt, stats = c("df", "sse", "ocv", "gcv")) {
+  ord <- summary_opt$degree
+  arr <- array(NA, dim = c(length(stats), length(ord), 1),
+               dimnames = list(stats, as.character(ord), NULL))
+
+  arr["df", , 1]  <- summary_opt$df_gcv
+  arr["sse", , 1] <- summary_opt$sse
+  arr["gcv", , 1] <- summary_opt$gcv_min
+  arr["ocv", , 1] <- summary_opt$ocv_min
+  return(arr)
+}
+
+
+
+
 # colorlist <- function(){
 #   c("#BA55D3","#00BFFF","#A2CD5A","#DAA520", # for zone
 #     "#DC143C", "#FF4500","#BC80BD","#BEBADA", # for keywords

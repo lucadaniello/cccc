@@ -124,3 +124,80 @@ facet_plot <- facetPlot(data, keyword_selection = list(type="frequency", n=3, kw
 facet_plot
 ```
 
+```{r}
+## Smoothing selection - P m-2
+p_m2 <- smoothingSelection(data_nchi,
+                                lambda_seq = NULL,
+                                degrees = NULL,
+                                penalty_type = "m-2",
+                                plot = TRUE,
+                                verbose = TRUE)
+p_m2$plots
+p_m2$summary_panel
+```
+
+```{r}
+## Smoothing selection - P 2
+
+p_2 <- smoothingSelection(data_nchi,
+                            lambda_seq = NULL,
+                            degrees = NULL,
+                            penalty_type = "2",
+                            plot = TRUE,
+                            verbose = TRUE)
+
+p_2$plots
+p_2$summary_panel
+```
+
+```{r}
+## Smoothing selection - P 1
+
+p_1 <- smoothingSelection(data_nchi,
+                           lambda_seq = NULL,
+                           degrees = NULL,
+                           penalty_type = "1",
+                           plot = TRUE,
+                           verbose = TRUE)
+
+p_1$plots
+p_1$summary_panel
+```
+
+```{r}
+## Smoothing selection - P 0
+
+p_0 <- smoothingSelection(data_nchi,
+                           lambda_seq = NULL,
+                           degrees = NULL,
+                           penalty_type = "0",
+                           normty = "nchi",
+                           plot = TRUE,
+                           verbose = TRUE)
+
+p_0$plots
+p_0$summary_panel
+```
+
+```{r}
+# Optimal Smoothing selection
+
+resSmoothing <- list("m-2" = p_m2,
+                     "2"   = p_2,
+                     "1"   = p_1,
+                     "0"   = p_0)
+
+opt_res <- optimalSmoothing(resSmoothing)
+
+# Accesso ai risultati
+opt_res$m_opt         # grado ottimale
+opt_res$penalty_opt   # penalizzazione ottimale
+opt_res$gcv_matrix    # matrice completa GCV
+opt_res$plots$gcv     # plot GCV
+```
+```{r}
+#######
+   data_nchi$optimal_results <- resSmoothing[[opt_res$penalty_opt]]
+   plotOptimalSmoothing(data_nchi, opt_result = opt_res)
+```
+

@@ -26,6 +26,7 @@
 #'   \itemize{
 #'     \item \code{tdm}: normalized term-document matrix.
 #'     \item \code{norm}: logical flag set to \code{TRUE}.
+#'     \item \code{normty}: Character. Indicates the type of normalization applied.
 #'     \item \code{p_asy} (optional): numeric vector of asymmetry parameters, only if \code{normty == "nnl"} and \code{p_asy = TRUE}.
 #'   }
 #'
@@ -109,10 +110,12 @@ normalization <- function(data,
   data$norm <- TRUE
   data$tdm <- result
   data <- tdm2long(data)
+  data$normty <- normty
 
   if (normty == "nnl" && p_asy) {
     data$p_asy = p
   }
+
 
   return(data)
 }
