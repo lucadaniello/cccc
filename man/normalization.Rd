@@ -22,6 +22,7 @@ A list identical in structure to the input \code{data}, with these modifications
 \itemize{
 \item \code{tdm}: normalized term-document matrix.
 \item \code{norm}: logical flag set to \code{TRUE}.
+\item \code{normty}: Character. Indicates the type of normalization applied.
 \item \code{p_asy} (optional): numeric vector of asymmetry parameters, only if \code{normty == "nnl"} and \code{p_asy = TRUE}.
 }
 }
