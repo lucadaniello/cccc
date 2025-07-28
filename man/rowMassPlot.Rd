@@ -19,8 +19,12 @@ and colored by their assigned frequency zone, combining both the zone
 and its frequency interval label.
 }
 \examples{
-\donttest{
-data <- importData("JPSP_TITfreq.csv", "JPSP_TITinfo.csv", sep_tdm = ";", sep_corpus_info = ";")
+\dontrun{
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
 rowMassPlot(tdm = data$tdm)
 }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotOptimalSmoothing.R
 \name{plotOptimalSmoothing}
 \alias{plotOptimalSmoothing}
-\title{Plot the Optimally Smoothed Keyword Curves}
+\title{Plot Optimally Smoothed Keyword Frequency Curves}
 \usage{
 plotOptimalSmoothing(
   data,
@@ -17,57 +17,56 @@ plotOptimalSmoothing(
 )
 }
 \arguments{
-\item{data}{A list returned by \code{\link[=importData]{importData()}}, containing at least:
-\code{tdm}, \code{corpus_info}, and \code{year_cols}.
-The element \code{optimal_results} must also be set, typically from
-\code{data$optimal_results <- results_list[[opt$penalty_opt]]}.}
+\item{data}{A list as returned by \code{importData()}, containing the term-document matrix and metadata.}
 
-\item{opt_result}{A list returned by \code{\link[=optimalSmoothing]{optimalSmoothing()}}, containing the selected
-optimal degree and penalty.}
+\item{opt_result}{A list as returned by \code{optimalSmoothing()}, including optimal degree and penalty type.}
 
-\item{m_opt}{Optional integer. If specified, overrides the spline degree in \code{opt_result}.}
+\item{m_opt}{Optional. Integer indicating the spline degree to override the optimal one.}
 
-\item{penalty_opt}{Optional character. If specified, overrides the penalty in \code{opt_result}.
-Must be one of \code{"m-2"}, \code{"2"}, \code{"1"}, \code{"0"}.}
+\item{penalty_opt}{Optional. Character string to override the selected penalization type (e.g., \code{"m-2"}, \code{"2"}, \code{"1"}, or \code{"0"}).}
 
-\item{ylab}{Character. Label for the y-axis. Default is \code{"Frequency"}.}
+\item{ylab}{Character. Y-axis label. Defaults to \code{"Frequency"}.}
 
-\item{xlim}{Numeric vector of length 2 specifying the x-axis limits. Default is automatic.}
+\item{xlim}{Numeric vector of length 2 specifying the x-axis range. If \code{NULL}, it is determined automatically.}
 
-\item{main}{Optional plot title. If \code{NULL}, an automatic expression with GCV info is used.}
+\item{main}{Optional. Plot title. If \code{NULL}, a dynamic expression is used showing the optimal degree, penalty, and GCV value.}
 
-\item{lwd}{Numeric. Line width multiplier. Default is \code{1}.}
+\item{lwd}{Numeric. Line width scaling factor. Default is \code{1}.}
 
-\item{nx}{Integer. Number of evaluation points for the smoothed curves.
-Default is \verb{10 × number of years}.}
+\item{nx}{Integer. Number of evaluation points for the smoothed curves. Default is \code{10 × number of years}.}
 }
 \value{
-A \code{ggplot2} object showing raw (dashed) and smoothed (solid) keyword curves over time.
+A \code{ggplot2} object displaying raw (dashed gray) and smoothed (colored) frequency curves for all keywords over time.
 }
 \description{
 This function visualizes the result of the optimal smoothing procedure applied
-to keyword frequency curves over time. It overlays raw curves (dashed gray lines)
-and smoothed curves (solid colored lines) for all selected keywords.
-The optimal spline degree and penalization type are used by default, unless
-explicitly overridden via \code{m_opt} and \code{penalty_opt}.
+to keyword frequency curves over time. It overlays the raw frequencies (dashed gray lines)
+and the smoothed curves (solid colored lines) using optimal smoothing parameters
+previously selected by \code{optimalSmoothing()}.
 }
 \details{
-The smoothing is performed using B-splines with roughness penalties, and the smoothed
-functions are evaluated at a high-resolution grid (\code{nx} points) for smooth visualization.
+Smoothing is performed using B-spline basis functions with roughness penalties. The smoothed
+functions are evaluated over a dense grid of points (default: 10 × number of years) to provide
+a high-resolution visualization.
 }
 \examples{
 \dontrun{
-data <- importData("tdm.csv", "corpus.csv")
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
+data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+
 res_list <- list(
-  "m-2" = smoothingSelection(data, penalty_type = "m-2", plot = FALSE),
-  "2"   = smoothingSelection(data, penalty_type = "2", plot = FALSE),
-  "1"   = smoothingSelection(data, penalty_type = "1", plot = FALSE),
-  "0"   = smoothingSelection(data, penalty_type = "0", plot = FALSE)
+  "m-2" = smoothingSelection(data_nchi, penalty_type = "m-2", plot = FALSE),
+  "2"   = smoothingSelection(data_nchi, penalty_type = "2", plot = FALSE),
+  "1"   = smoothingSelection(data_nchi, penalty_type = "1", plot = FALSE),
+  "0"   = smoothingSelection(data_nchi, penalty_type = "0", plot = FALSE)
 )
 
 opt <- optimalSmoothing(res_list)
-data$optimal_results <- res_list[[opt$penalty_opt]]
-plotOptimalSmoothing(data, opt_result = opt)
+plotOptimalSmoothing(data_nchi, opt_result = opt)
 }
 
 }

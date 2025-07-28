@@ -1,3 +1,11 @@
+utils::globalVariables(c(
+  ".", "chrono", "degree", "df", "df_gcv", "dimCorpus", "example", "freq",
+  "gcv", "gcv_min", "int_freq", "keyword", "kw_color", "label", "lambda",
+  "median", "metric", "nDoc", "ocv", "ocv_min", "penalty", "quantile",
+  "reorder", "sd", "setNames", "smooth", "sse", "time", "tot_freq", "value",
+  "year", "years", "zone", "zone_color", "zone_label","cluster_num", "letter", "Freq", "color", "perc", "cluster"
+))
+
 #' @import ggplot2
 #' @import dplyr
 #' @import readr
@@ -6,24 +14,32 @@
 #' @import ggnewscale
 #' @import stringr
 #' @import tidyr
-
+#' @importFrom stats cor
+#'
 .onAttach<-function(...){
   packageStartupMessage("cccc package")
 }
 
 # Utility functions
 
-## Helper: read CSV o Excel
 read_data <- function(path, sep) {
-  if (str_ends(path, ".csv")) {
+  if (path == "" || !file.exists(path)) {
+    stop("File not found: make sure the path is correct and the file exists.")
+  }
+
+  ext <- tolower(tools::file_ext(path))
+
+  if (ext == "csv") {
     if (is.null(sep)) stop("CSV file provided, but separator is NULL.")
-    read_delim(path, delim = sep, show_col_types = FALSE)
-  } else if (str_ends(path, ".xlsx?$")) {
+    readr::read_delim(path, delim = sep, show_col_types = FALSE)
+  } else if (ext %in% c("xls", "xlsx")) {
     readxl::read_excel(path)
   } else {
-    stop("Unsupported file format.")
+    stop("Unsupported file format: ", ext)
   }
 }
+
+
 
 ## from tdm to long format
 tdm2long <- function(data){
@@ -94,6 +110,158 @@ make_temparray <- function(summary_opt, stats = c("df", "sse", "ocv", "gcv")) {
 }
 
 
+
+#Reconstruct Smoothed Functional Data Object
+# Compute the optimal smoothing spline fit for keyword frequency curves
+# data A list returned by importData
+# opt_results A list returned by optimalSmoothing(resSmoothing) where resSmoothing is a list with all smoothingSeleciton penalty tyope outputs
+
+getWsmooth <- function(data, opt_result) {
+  # Step 1: Extract the term-document matrix as a numeric matrix of keyword frequencies over time
+  mat <- data$tdm %>%
+    dplyr::select(dplyr::any_of(data$year_cols)) %>%
+    as.matrix()
+
+  # Step 2: Assign keywords as row names
+  rownames(mat) <- data$tdm$keyword
+
+  # Step 3: Filter out keywords with zero total frequency across all years
+  mat <- mat[rowSums(mat) > 0, , drop = FALSE]
+
+  # Step 4: Define the time points (e.g., 1 to number of years)
+  fdtime <- seq_len(ncol(mat))
+
+  # Step 5: Extract optimal degree and penalty type from the optimization result
+  m_opt <- opt_result$m_opt
+  penalty_opt <- opt_result$penalty_opt
+
+  # Step 6: Retrieve optimal lambda from the log10-transformed GCV values, using the selected degree
+  lambda <- 10^opt_result$optSmoothing$summary_optimal$log_lambda_gcv[
+    opt_result$optSmoothing$summary_optimal$degree == m_opt
+  ]
+
+  # Step 7: Define the B-spline basis with the selected degree
+  basis <- fda::create.bspline.basis(breaks = fdtime, norder = m_opt)
+
+  # Step 8: Choose the order of the differential operator based on the penalty type
+  lfd <- switch(penalty_opt,
+                "m-2" = max(0, m_opt - 2),
+                "2" = if (m_opt > 3) 2 else if (m_opt == 3) 1 else 0,
+                "1" = if (m_opt > 2) 1 else 0,
+                "0" = 0)
+
+  # Step 9: Define the smoothing configuration using basis, differential operator, and lambda
+  fdpar <- fda::fdPar(basis, lfd, lambda)
+
+  # Step 10: Apply smoothing to the data (transpose: keywords become columns)
+  smoothed <- fda::smooth.basis(argvals = fdtime, y = t(mat), fdParobj = fdpar)
+
+  # Step 11: Label the coefficient matrix columns with the keyword names
+  colnames(smoothed$fd$coefs) <- rownames(mat)
+
+  # Step 12: Attach degree and penalty info to the output object
+  smoothed$degree <- m_opt
+  smoothed$penalty <- penalty_opt
+
+  # Step 13: Return the smoothed functional data object
+  return(smoothed)
+}
+
+# zzz.R
+
+#' Get Optimization Rules for Clustering Validation Criteria
+#'
+#' Internal function that returns the set of optimization rules for each criterion.
+#' Used by buildCIVf() to decide how to interpret each criterion's values.
+#'
+#' @return Named character vector of optimization rules.
+#' @keywords internal
+get_opt_civ <- function() {
+  c(
+    Ball_Hall = "maxd2",
+    Ball_2 = "mind1",
+    Banfeld_Raftery = "min",
+    C_index = "min",
+    Cindex_2 = "min",
+    Calinski_Harabasz = "max",
+    Davies_Bouldin = "min",
+    DB_2 = "min",
+    Det_Ratio = "mind2",
+    Dunn = "max",
+    Gamma = "max",
+    G_plus = "min",
+    GDI12 = "max",
+    GDI13 = "max",
+    GDI21 = "max",
+    GDI22 = "max",
+    GDI23 = "max",
+    GDI31 = "max",
+    GDI32 = "max",
+    GDI33 = "max",
+    GDI41 = "max",
+    GDI42 = "max",
+    GDI43 = "max",
+    GDI51 = "max",
+    GDI52 = "max",
+    GDI53 = "max",
+    Ksq_DetW = "maxd2",
+    Log_Det_Ratio = "mind2",
+    Log_SS_Ratio = "mind2",
+    McClain_Rao = "min",
+    PBM = "max",
+    Point_Biserial = "max",
+    Ratkowsky_Lance = "max",
+    Ray_Turi = "min",
+    Scott_Symons = "min",
+    SD = "min",
+   #S_Dbw = "min", function used to perform needs to be find
+    Silhouette = "max",
+    Tau = "max",
+    Trace_W = "maxd2",
+    Trace_WiB = "mind2",
+    Wemmert_Gancarski = "max",
+    Xie_Beni = "min",
+    KL = "max",
+    Gap = "nonneg",
+    Hartigan = "less10",
+    BIC = "mind2"
+  )
+}
+
+
+#' Compute Internal Clustering Validity Criterion
+#'
+#' Internal utility function to compute a specified internal clustering validation index,
+#' using either the \pkg{clusterCrit} or \pkg{clusterSim} packages.
+#'
+#' @param data Numeric matrix of observations (e.g., term trajectories).
+#' @param clustering Integer vector of cluster assignments.
+#' @param criterion Character. Name of the criterion to compute.
+#'
+#' @return A numeric value corresponding to the criterion.
+#'
+
+computeCriterion <- function(data, clustering, criterion) {
+  if (criterion %in% clusterCrit::getCriteriaNames(isInternal = TRUE)) {
+    intcrit <- clusterCrit::intCriteria(
+      traj = data,
+      part = as.integer(unname(clustering)),
+      crit = criterion
+    )
+    return(intcrit[[1]])
+  }
+
+  # clusterSim ## index.SDbw deprecated
+  # if (criterion == "S_Dbw") {
+  #   return(clusterSim::index.SDbw(data, clustering, centrotypes = "centroids"))
+  # }
+
+  if (criterion == "Point_Biserial") {
+    return(clusterSim::index.G1(data, clustering))
+  }
+
+  stop(paste("Unsupported criterion:", criterion))
+}
 
 
 # colorlist <- function(){

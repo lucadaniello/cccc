@@ -2,7 +2,7 @@
 % Please edit documentation in R/facetPlot.R
 \name{facetPlot}
 \alias{facetPlot}
-\title{Create a ggplot of term curves by faceting}
+\title{Faceted Plot of Keyword Frequency Curves}
 \usage{
 facetPlot(
   data,
@@ -16,30 +16,42 @@ facetPlot(
 )
 }
 \arguments{
-\item{data}{A (molten) dataframe of the term by documents table.}
+\item{data}{A list object returned by \code{importData()}, containing the term-document matrix in long format and metadata.}
 
-\item{keyword_selection}{A list...}
+\item{keyword_selection}{A list specifying how to select the keywords to highlight. The list should contain:
+\describe{
+\item{\code{type}}{ (character) One of \code{"frequency"}, \code{"random"}, or \code{"list"} to choose keywords based on total frequency, at random, or from a user-defined list.}
+\item{\code{n}}{ (integer) Number of keywords to select per zone (used for \code{type = "frequency"} or \code{"random"}).}
+\item{\code{kw.list}}{ (character vector) List of specific keywords to plot (used for \code{type = "list"}).}
+}}
 
-\item{r}{A scalar for thinning labels of time x-scale.}
+\item{r}{An integer that controls the thinning of x-axis year labels (e.g., every \code{r}-th year is labeled).}
 
-\item{scales}{Type of scale for facets: "fixed" (the default) or "free"}
+\item{scales}{Character. Whether y-axis scales should be \code{"fixed"} (default) or \code{"free"} across facets.}
 
-\item{leg}{Whether legend must be drawn (T is default) or not}
+\item{leg}{Logical. Whether to display the legend (\code{TRUE} by default).}
 
-\item{themety}{Type of theme.}
+\item{themety}{Character. Theme type: \code{"light"} (default) or \code{"dark"}.}
 
-\item{size_class}{size of lines per frequency class.}
+\item{size_class}{Optional numeric vector. Specifies the relative thickness of lines by zone. Defaults are assigned if not provided.}
 
-\item{x_lab}{x-axis label: "year" (default), user can set a more complete label (e.g., "year/volume").}
-
-\item{norm}{Logical value: true (by default) if frequencies have been normalized.}
+\item{x_lab}{Character. Label for the x-axis. Defaults to \code{"year"} but can be customized (e.g., \code{"year/volume"}).}
 }
 \value{
-A ggplot object.
+A \code{ggplot} object showing smoothed or raw frequency curves of selected keywords, grouped by zone.
 }
 \description{
-Draw curves of term frequency.
+This function creates a faceted \code{ggplot2} visualization of keyword frequency curves across time, grouped by frequency zone. It allows selecting a subset of keywords either by random sampling, by frequency, or by a custom list. The function returns a \code{ggplot} object where each panel corresponds to a frequency zone, and selected keywords are highlighted with distinct colors.
 }
 \examples{
-# facetPlot(dat_df)
+\dontrun{
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
+facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+r = 4, scales = "free", leg = TRUE, themety = "light", size_class = NULL, x_lab = "year")
+}
+
 }

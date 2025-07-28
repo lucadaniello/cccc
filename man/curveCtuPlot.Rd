@@ -41,12 +41,16 @@ customizable themes, axis labeling, and adaptive thinning of the x-axis labels.
 \details{
 The plot uses two separate color scales: one for
 the frequency zones and one for the example keywords. Each zone is
-labeled with its frequency interval (e.g., "High \link{201–500}"),
+labeled with its frequency interval,
 and the example keywords are displayed with a distinct legend.
 }
 \examples{
 \dontrun{
-data <- importData("tdm.csv", "corpus.csv", sep_tdm = ";", sep_corpus_info = ",", zone="stat")
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
 curveCtuPlot(data,
                 ctu_noun = c("person", "object", "instruct", "incident"),
                 r = 1,

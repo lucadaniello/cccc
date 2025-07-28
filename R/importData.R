@@ -8,15 +8,15 @@
 #' @param tdm_file Character. Path to the term-document matrix file (CSV or Excel).
 #'
 #' tdm_file description:
-#' \tab The first column must contain the list of terms, while all other columns must be labeled with the corresponding years.
+#' - The first column must contain the list of terms, while all other columns must be labeled with the corresponding years.
 #'
 #' @param corpus_file Character. Path to the corpus information file (CSV or Excel).
 #'
-#' corpus_file description:
-#' \tab The first column must contain the list of years.
-#' \tab The second column the total number of tokens per year.
-#' \tab The third column the number of documents per year.
-#' \tab The fourth column (if present) any additional metadata.
+#' Corpus_file description:
+#' - The first column must contain the list of years.
+#' - The second column the total number of tokens per year.
+#' - The third column the number of documents per year.
+#' - The fourth column (if present) any additional metadata.
 #'
 #' @param sep_tdm Character or NULL. Separator used in the TDM CSV file (e.g., "," or ";"). Ignored if the file is Excel.
 #' @param sep_corpus_info Character or NULL. Separator used in the corpus information CSV file. Ignored if the file is Excel.
@@ -25,37 +25,40 @@
 #'
 #' @return A list with the following elements:
 #' \describe{
-#'   \item{tdm}{A tibble representing the cleaned and processed term-document matrix. Contains:
-#'     \itemize{
-#'       \item \code{keyword}: the lexical unit or term.
-#'       \item \code{tot_freq}: the total frequency of the term across all years.
-#'       \item \code{int_freq}: a string representation of the frequency interval for the assigned zone.
-#'       \item \code{zone}: the assigned frequency zone (e.g., \code{"VL"}, \code{"L"}, \code{"H"}, \code{"VH"} or \code{"low"}, \code{"medium"}, \code{"high"} depending on strategy).
-#'       \item Yearly frequency columns (one per year).
-#'     }}
-#'   \item{corpus_info}{A tibble containing corpus-level yearly metadata:
-#'     \itemize{
-#'       \item \code{years}: year of observation.
-#'       \item \code{dimCorpus}: total number of tokens.
-#'       \item \code{nDoc}: number of documents.
-#'       \item \code{metadata} (optional): additional information.
-#'     }}
-#'   \item{norm}{Logical. Indicates whether the term-document matrix has been normalized. Default is \code{FALSE}. If the TDM is normalized using the \code{normalize()} function, this will be set to \code{TRUE}.}
-#'   \item{year_cols}{A numeric vector indicating which columns in the TDM refer to yearly frequencies.}
+#'   \item{tdm}{A tibble representing the cleaned and processed term-document matrix.
+#'     It contains the following columns:
+#'     \code{keyword} (the lexical unit or term),
+#'     \code{tot_freq} (total frequency of the term across all years),
+#'     \code{int_freq} (frequency interval string for the assigned zone),
+#'     \code{zone} (the assigned frequency zone),
+#'     plus one column per year representing term frequency in that year.}
+#'   \item{corpus_info}{A tibble with corpus-level yearly metadata.
+#'     It includes the columns:
+#'     \code{years} (observation year),
+#'     \code{dimCorpus} (total number of tokens),
+#'     \code{nDoc} (number of documents),
+#'     and optionally \code{metadata} (additional information).}
+#'   \item{norm}{Logical. Indicates whether the term-document matrix has been normalized (default is \code{FALSE}).}
+#'   \item{year_cols}{Numeric vector indicating which columns in the TDM refer to yearly frequencies.}
 #'   \item{zone}{Character vector of unique frequency zones used.}
 #'   \item{colors}{Character vector of default colors associated with zones.}
 #' }
 #'
 #' @examples
-#' \donttest{
-#' data <- importData("tdm.csv", "corpus.csv", sep_tdm = ";", sep_corpus_info = ",")
+#' \dontrun{
+#' tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+#' corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+#'
+#' data <- importData(tdm_file = tdm, corpus_file = corpus,
+#' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+#'
 #' tdm <- data$tdm
 #' corpus_info <- data$corpus_info
 #' }
 #'
 #' @export
 
-importData <- function(tdm_file, corpus_file, sep_tdm = NULL, sep_corpus_info = NULL, zone ="stat", verbose = TRUE) {
+importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";", zone ="stat", verbose = TRUE) {
 
   # Import data
   tdm <- read_data(tdm_file, sep_tdm) %>% as_tibble()

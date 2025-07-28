@@ -22,8 +22,11 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
-#' data <- importData("tdm.csv", "corpus.csv", sep_tdm = ";", sep_corpus_info = ",")
+#' \dontrun{
+#' tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+#' corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+#' data <- importData(tdm_file = tdm, corpus_file = corpus,
+#' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
 #'
 #' colMassPlot(data,
 #' sc = c(1, 10, 10, 1),
