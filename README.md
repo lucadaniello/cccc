@@ -622,3 +622,364 @@ facet_plot
 ```
 
 <img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+
+``` r
+## Smoothing selection - P m-2
+p_m2 <- smoothingSelection(data_nchi,
+                                lambda_seq = NULL,
+                                degrees = NULL,
+                                penalty_type = "m-2",
+                                plot = TRUE,
+                                verbose = TRUE)
+#> Processing degree m = 1
+#> Processing degree m = 2
+#> Processing degree m = 3
+#> Processing degree m = 4
+#> Processing degree m = 5
+#> Processing degree m = 6
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 106100793.040796 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 106100793.040796 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 106100793.040796 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 106100793.040796 to prevent overflow
+#> Processing degree m = 7
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 2478303.51172501 to prevent overflow
+#> Processing degree m = 8
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+#> Warning in smooth.basis1(argvals, y, fdParobj, wtvec = wtvec, fdnames =
+#> fdnames, : lambda reduced to 45381.8066035005 to prevent overflow
+p_m2$plots
+#> $df
+```
+
+<img src="man/figures/README-unnamed-chunk-16-1.png" width="100%" />
+
+    #> 
+    #> $sse
+
+<img src="man/figures/README-unnamed-chunk-16-2.png" width="100%" />
+
+    #> 
+    #> $gcv
+
+<img src="man/figures/README-unnamed-chunk-16-3.png" width="100%" />
+
+    #> 
+    #> $ocv
+
+<img src="man/figures/README-unnamed-chunk-16-4.png" width="100%" />
+
+``` r
+p_m2$summary_panel
+```
+
+<img src="man/figures/README-unnamed-chunk-16-5.png" width="100%" />
+
+``` r
+## Smoothing selection - P 2
+
+p_2 <- smoothingSelection(data_nchi,
+                            lambda_seq = NULL,
+                            degrees = NULL,
+                            penalty_type = "2",
+                            plot = TRUE,
+                            verbose = TRUE)
+#> Processing degree m = 1
+#> Processing degree m = 2
+#> Processing degree m = 3
+#> Processing degree m = 4
+#> Processing degree m = 5
+#> Processing degree m = 6
+#> Processing degree m = 7
+#> Processing degree m = 8
+
+p_2$plots
+#> $df
+```
+
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
+
+    #> 
+    #> $sse
+
+<img src="man/figures/README-unnamed-chunk-17-2.png" width="100%" />
+
+    #> 
+    #> $gcv
+
+<img src="man/figures/README-unnamed-chunk-17-3.png" width="100%" />
+
+    #> 
+    #> $ocv
+
+<img src="man/figures/README-unnamed-chunk-17-4.png" width="100%" />
+
+``` r
+p_2$summary_panel
+```
+
+<img src="man/figures/README-unnamed-chunk-17-5.png" width="100%" />
+
+``` r
+## Smoothing selection - P 1
+
+p_1 <- smoothingSelection(data_nchi,
+                           lambda_seq = NULL,
+                           degrees = NULL,
+                           penalty_type = "1",
+                           plot = TRUE,
+                           verbose = TRUE)
+#> Processing degree m = 1
+#> Processing degree m = 2
+#> Processing degree m = 3
+#> Processing degree m = 4
+#> Processing degree m = 5
+#> Processing degree m = 6
+#> Processing degree m = 7
+#> Processing degree m = 8
+
+p_1$plots
+#> $df
+```
+
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
+
+    #> 
+    #> $sse
+
+<img src="man/figures/README-unnamed-chunk-18-2.png" width="100%" />
+
+    #> 
+    #> $gcv
+
+<img src="man/figures/README-unnamed-chunk-18-3.png" width="100%" />
+
+    #> 
+    #> $ocv
+
+<img src="man/figures/README-unnamed-chunk-18-4.png" width="100%" />
+
+``` r
+p_1$summary_panel
+```
+
+<img src="man/figures/README-unnamed-chunk-18-5.png" width="100%" />
+
+``` r
+## Smoothing selection - P 0
+
+p_0 <- smoothingSelection(data_nchi,
+                           lambda_seq = NULL,
+                           degrees = NULL,
+                           penalty_type = "0",
+                           normty = "nchi",
+                           plot = TRUE,
+                           verbose = TRUE)
+#> Processing degree m = 1
+#> Processing degree m = 2
+#> Processing degree m = 3
+#> Processing degree m = 4
+#> Processing degree m = 5
+#> Processing degree m = 6
+#> Processing degree m = 7
+#> Processing degree m = 8
+
+p_0$plots
+#> $df
+```
+
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="100%" />
+
+    #> 
+    #> $sse
+
+<img src="man/figures/README-unnamed-chunk-19-2.png" width="100%" />
+
+    #> 
+    #> $gcv
+
+<img src="man/figures/README-unnamed-chunk-19-3.png" width="100%" />
+
+    #> 
+    #> $ocv
+
+<img src="man/figures/README-unnamed-chunk-19-4.png" width="100%" />
+
+``` r
+p_0$summary_panel
+```
+
+<img src="man/figures/README-unnamed-chunk-19-5.png" width="100%" />
+
+``` r
+# Optimal Smoothing selection
+
+resSmoothing <- list("m-2" = p_m2,
+                     "2"   = p_2,
+                     "1"   = p_1,
+                     "0"   = p_0)
+
+opt_res <- optimalSmoothing(resSmoothing)
+
+# Results
+opt_res$m_opt         # optimal degree
+#> [1] 3
+opt_res$penalty_opt   # optimal penality
+#> [1] "1"
+opt_res$gcv_matrix    # GCV array
+#>            1        2        3        4        5        6        7        8
+#> m-2 0.071167 0.071398 0.050666 0.051086 0.051463 0.051775 0.053073 0.056457
+#> 2   0.071167 0.071398 0.050666 0.051086 0.051086 0.051086 0.051086 0.051086
+#> 1   0.071167 0.071398 0.050666 0.050664 0.050667 0.050664 0.050668 0.050665
+#> 0   0.071167 0.071398 0.068790 0.071398 0.071018 0.071387 0.071357 0.071395
+opt_res$plots$gcv     # plots
+```
+
+<img src="man/figures/README-unnamed-chunk-20-1.png" width="100%" />
+
+``` r
+opt_res$plots$ocv
+```
+
+<img src="man/figures/README-unnamed-chunk-20-2.png" width="100%" />
+
+``` r
+opt_res$plots$df
+```
+
+<img src="man/figures/README-unnamed-chunk-20-3.png" width="100%" />
+
+``` r
+opt_res$plots$sse
+```
+
+<img src="man/figures/README-unnamed-chunk-20-4.png" width="100%" />
+
+``` r
+#######
+   plot_opt <- plotOptimalSmoothing(data_nchi, opt_result = opt_res)
+   plot_opt
+```
+
+<img src="man/figures/README-unnamed-chunk-21-1.png" width="100%" />
+
+``` r
+plotSubOpt <- plotSuboptimalFits(data=data_nchi,
+                               opt_res=opt_res,
+                               n_curves = 9,
+                               show_zone = TRUE,
+                               graph = FALSE)
+plotSubOpt
+#> $singleKeywordPlot
+#> $singleKeywordPlot$effect
+```
+
+<img src="man/figures/README-unnamed-chunk-22-1.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$attach
+
+<img src="man/figures/README-unnamed-chunk-22-2.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$effort
+
+<img src="man/figures/README-unnamed-chunk-22-3.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$convers
+
+<img src="man/figures/README-unnamed-chunk-22-4.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$organ
+
+<img src="man/figures/README-unnamed-chunk-22-5.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$agenc
+
+<img src="man/figures/README-unnamed-chunk-22-6.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$`social desir`
+
+<img src="man/figures/README-unnamed-chunk-22-7.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$selv
+
+<img src="man/figures/README-unnamed-chunk-22-8.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$psychosoci
+
+<img src="man/figures/README-unnamed-chunk-22-9.png" width="100%" />
+
+    #> 
+    #> $singleKeywordPlot$`riski shift`
+
+<img src="man/figures/README-unnamed-chunk-22-10.png" width="100%" />
+
+    #> 
+    #> 
+    #> $combinedKeywordPlot
+
+<img src="man/figures/README-unnamed-chunk-22-11.png" width="100%" />

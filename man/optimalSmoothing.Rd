@@ -16,8 +16,10 @@ statistics across penalty types and degrees.}
 \value{
 A list containing:
 \describe{
+\item{optSmoothing}{A list with all data regarding the optimal penalty type resulted by \code{\link[=smoothingSelection]{smoothingSelection()}}}
 \item{m_opt}{Integer. Optimal spline degree minimizing GCV across all penalties.}
 \item{penalty_opt}{Character. The optimal penalty type (one of \code{"m-2"}, \code{"2"}, \code{"1"}, \code{"0"}).}
+\item{lambda_opt}{Numeric. The optimal log10(lambda) value corresponding to the selected spline degree and penalty.}
 \item{gcv_matrix}{Numeric matrix of GCV values. Rows correspond to penalty types, columns to spline degrees.}
 \item{plots}{(Optional) A named list of \code{ggplot} objects for \code{gcv}, \code{ocv}, \code{df}, and \code{sse}, if \code{plot = TRUE}.}
 \item{call}{The matched function call, useful for reproducibility.}
@@ -35,17 +37,21 @@ degrees and penalty types.
 }
 \examples{
 \dontrun{
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
+data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+
 # Assume multiple smoothing selections have been computed:
-results_m2 <- smoothingSelection(data, penalty_type = "m-2", plot = FALSE)
-results_2  <- smoothingSelection(data, penalty_type = "2", plot = FALSE)
-results_1  <- smoothingSelection(data, penalty_type = "1", plot = FALSE)
-results_0  <- smoothingSelection(data, penalty_type = "0", plot = FALSE)
+results_m2 <- smoothingSelection(data_nchi, penalty_type = "m-2", plot = FALSE)
+results_2  <- smoothingSelection(data_nchi, penalty_type = "2", plot = FALSE)
+results_1  <- smoothingSelection(data_nchi, penalty_type = "1", plot = FALSE)
+results_0  <- smoothingSelection(data_nchi, penalty_type = "0", plot = FALSE)
 
 # Compare and select best smoothing strategy
 opt <- optimalSmoothing(list("m-2" = results_m2, "2" = results_2, "1" = results_1, "0" = results_0))
-opt$m_opt
-opt$penalty_opt
-opt$plots$gcv
 }
 
 }

@@ -33,6 +33,7 @@
 #'   \item{optimal_ocv}{Subset of `results` containing the lambda value that minimizes OCV for each degree.}
 #'   \item{plots}{A list of `ggplot` objects for `df`, `sse`, `gcv`, and `ocv` (only if `plot = TRUE`).}
 #'   \item{summary_panel}{A graphical summary (grob object) of optimal smoothing for visual reporting.}
+#'   \item{degree}{Numeric indicates the degree m}
 #'   \item{penalty_type}{Character string of the penalization type used.}
 #'   \item{call}{The matched call for reproducibility.}
 #' }
@@ -43,17 +44,16 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Load term-document matrix and corpus metadata
-#' data <- importData("tdm.csv", "corpus.csv")
+#' tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+#' corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+#' data <- importData(tdm_file = tdm, corpus_file = corpus,
+#' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+#'
+#' data_nchi <- normalization(data, normty = "nchi", sc = 1000)
 #'
 #' # Run smoothing selection using default settings
-#' result <- smoothingSelection(data, penalty_type = "m-2")
+#' result <- smoothingSelection(data_nchi, penalty_type = "m-2")
 #'
-#' # View optimal summary
-#' result$summary_optimal
-#'
-#' # Plot GCV curves
-#' result$plots$gcv
 #' }
 
 
@@ -85,7 +85,7 @@ smoothingSelection <- function(data,
   fdtime <- seq_along(year_vec)
 
   tdm_wide <- data$tdm %>%
-    dplyr::select(keyword, tidyselect::any_of(year_ind)) %>%
+    dplyr::select(keyword, any_of(year_ind)) %>%
     tibble::column_to_rownames("keyword") %>%
     as.matrix()
 
@@ -197,7 +197,9 @@ smoothingSelection <- function(data,
     optimal_ocv = opt_ocv,
     plots = plot_list,
     summary_panel = summary_panel,
+    degree = m,
     penalty_type = penalty_type,
     call = match.call()
   ))
+
 }

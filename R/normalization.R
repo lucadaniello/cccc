@@ -31,10 +31,13 @@
 #'   }
 #'
 #' @examples
-#' \donttest{
-#' data <- importData("tdm.csv", "corpus.csv", sep_tdm = ";", sep_corpus_info = ",")
-#' data_norm <- normalization(data, normty = "nc")
-#' data_norm$norm # returns TRUE
+#' \dontrun{
+#' tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+#' corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+#' data <- importData(tdm_file = tdm, corpus_file = corpus,
+#' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+#'
+#' normalization(data, normty = "nchi", sc = 1000)
 #' }
 #'
 #' @export

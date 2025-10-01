@@ -189,15 +189,104 @@ resSmoothing <- list("m-2" = p_m2,
 
 opt_res <- optimalSmoothing(resSmoothing)
 
-# Accesso ai risultati
-opt_res$m_opt         # grado ottimale
-opt_res$penalty_opt   # penalizzazione ottimale
-opt_res$gcv_matrix    # matrice completa GCV
-opt_res$plots$gcv     # plot GCV
+# Results
+opt_res$m_opt         # optimal degree
+opt_res$penalty_opt   # optimal penality
+opt_res$gcv_matrix    # GCV array
+opt_res$plots$gcv     # plots
+opt_res$plots$ocv
+opt_res$plots$df
+opt_res$plots$sse
 ```
+
 ```{r}
 #######
-   data_nchi$optimal_results <- resSmoothing[[opt_res$penalty_opt]]
-   plotOptimalSmoothing(data_nchi, opt_result = opt_res)
+   plot_opt <- plotOptimalSmoothing(data_nchi, opt_result = opt_res)
+   plot_opt
+```
+
+```{r}
+plotSubOpt <- plotSuboptimalFits(data=data_nchi,
+                               opt_res=opt_res,
+                               n_curves = 9,
+                               show_zone = TRUE,
+                               graph = FALSE)
+plotSubOpt
+```
+
+
+
+```{r}
+# Run Clustering Across a Range of Cluster Numbers
+g <- runClusteringRange(data_nchi,
+                         k_range = 2:26,
+                         n_repeats = 20,
+                         seed = 123,
+                         verbose = TRUE)
+```
+
+
+```{r}
+# Build Clustering Internal Validation Matrix (CIVf)
+
+g2 <- buildCIVf(clustering_set=g,
+                       criteria_set = NULL,
+                       min_valid_values = 0.75,
+                       verbose = TRUE)
+g2$opt_civ
+```
+
+```{r}
+#' Select Top Partitions Based on Ranking Matrix
+g3 <- selectBestPartitions(g2, g, graph=T)
+```
+
+```{r}
+#' Compute Adjusted Rand Index Matrix from Best Partitions
+rand_result <- computeRandMatrix(g3)
+head(rand_result$rand_matrix)
+```
+
+
+```{r}
+#' Select Best Number of Clusters Based on Rand Matrix Stability
+
+best_k <- selectBestKfromRand(rand_result)
+best_k$best_k
+```
+```{r}
+#' Extract the Best Partition for a Selected k
+final_part <- extractBestPartition(g3, best_k$best_k, rand_matrix=rand_result)
+final_part
+```
+
+
+```{r}
+#' Compute Smoothed Cluster Trajectories and Summary Information
+fd_obj <- computeClusterFd(data = data_nchi, final_part = final_part, opt = opt_res)
+```
+
+
+```{r}
+#' Extract Top Keywords per Cluster by Rand Index
+top_keywords <- extractTopClusterWords(fd_obj, percent_words = 50)
+head(top_keywords$`1`,n=10)
+head(top_keywords$`2`,n=10)
+
+```
+
+```{r}
+#' Plot Cluster Curves from Functional Data Object
+plots <- plotClusterCurvesList(fd_obj,
+                               nx = 100)
+plots
+```
+
+```{r}
+#' Plot Cluster Trajectories
+plots2 <- plotAllClusterTrajectories(fd_obj,
+                            partition_id = NULL,
+                            nx = 100)
+plots2
 ```
 

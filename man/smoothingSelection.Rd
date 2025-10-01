@@ -46,6 +46,7 @@ A named list with the following components:
 \item{optimal_ocv}{Subset of \code{results} containing the lambda value that minimizes OCV for each degree.}
 \item{plots}{A list of \code{ggplot} objects for \code{df}, \code{sse}, \code{gcv}, and \code{ocv} (only if \code{plot = TRUE}).}
 \item{summary_panel}{A graphical summary (grob object) of optimal smoothing for visual reporting.}
+\item{degree}{Numeric indicates the degree m}
 \item{penalty_type}{Character string of the penalization type used.}
 \item{call}{The matched call for reproducibility.}
 }
@@ -63,17 +64,16 @@ parameters for each degree, and optional visualizations for interpretation.
 }
 \examples{
 \dontrun{
-# Load term-document matrix and corpus metadata
-data <- importData("tdm.csv", "corpus.csv")
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
+data_nchi <- normalization(data, normty = "nchi", sc = 1000)
 
 # Run smoothing selection using default settings
-result <- smoothingSelection(data, penalty_type = "m-2")
+result <- smoothingSelection(data_nchi, penalty_type = "m-2")
 
-# View optimal summary
-result$summary_optimal
-
-# Plot GCV curves
-result$plots$gcv
 }
 }
 \seealso{

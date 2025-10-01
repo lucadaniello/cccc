@@ -1,19 +1,37 @@
-#' Create a ggplot of term curves by faceting
+#' Faceted Plot of Keyword Frequency Curves
 #'
-#' Draw curves of term frequency.
-#' @param data A (molten) dataframe of the term by documents table.
-#' @param norm Logical value: true (by default) if frequencies have been normalized.
-#' @param keyword_selection A list...
-#' @param r A scalar for thinning labels of time x-scale.
-#' @param scales Type of scale for facets: "fixed" (the default) or "free"
-#' @param leg Whether legend must be drawn (T is default) or not
-#' @param themety Type of theme.
-#' @param size_class size of lines per frequency class.
-#' @param x_lab x-axis label: "year" (default), user can set a more complete label (e.g., "year/volume").
-#' @return A ggplot object.
+#' This function creates a faceted \code{ggplot2} visualization of keyword frequency curves across time, grouped by frequency zone. It allows selecting a subset of keywords either by random sampling, by frequency, or by a custom list. The function returns a \code{ggplot} object where each panel corresponds to a frequency zone, and selected keywords are highlighted with distinct colors.
+#'
+#' @param data A list object returned by \code{importData()}, containing the term-document matrix in long format and metadata.
+#' @param keyword_selection A list specifying how to select the keywords to highlight. The list should contain:
+#' \describe{
+#'   \item{\code{type}}{ (character) One of \code{"frequency"}, \code{"random"}, or \code{"list"} to choose keywords based on total frequency, at random, or from a user-defined list.}
+#'   \item{\code{n}}{ (integer) Number of keywords to select per zone (used for \code{type = "frequency"} or \code{"random"}).}
+#'   \item{\code{kw.list}}{ (character vector) List of specific keywords to plot (used for \code{type = "list"}).}
+#' }
+#' @param r An integer that controls the thinning of x-axis year labels (e.g., every \code{r}-th year is labeled).
+#' @param scales Character. Whether y-axis scales should be \code{"fixed"} (default) or \code{"free"} across facets.
+#' @param leg Logical. Whether to display the legend (\code{TRUE} by default).
+#' @param themety Character. Theme type: \code{"light"} (default) or \code{"dark"}.
+#' @param size_class Optional numeric vector. Specifies the relative thickness of lines by zone. Defaults are assigned if not provided.
+#' @param x_lab Character. Label for the x-axis. Defaults to \code{"year"} but can be customized (e.g., \code{"year/volume"}).
+#'
+#' @return A \code{ggplot} object showing smoothed or raw frequency curves of selected keywords, grouped by zone.
+#'
 #' @export
+#'
 #' @examples
-#' # facetPlot(dat_df)
+#' \dontrun{
+#' tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+#' corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+#' data <- importData(tdm_file = tdm, corpus_file = corpus,
+#' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+#'
+#' facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+#' r = 4, scales = "free", leg = TRUE, themety = "light", size_class = NULL, x_lab = "year")
+#' }
+#'
+#' @export
 
 
 facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),

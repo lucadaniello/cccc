@@ -47,10 +47,13 @@ non-linear normalization (\code{nnl}) and \code{p_asy = TRUE}, the list also inc
 \code{p_asy} with the asymmetry coefficients used for the transformation.
 }
 \examples{
-\donttest{
-data <- importData("tdm.csv", "corpus.csv", sep_tdm = ";", sep_corpus_info = ",")
-data_norm <- normalization(data, normty = "nc")
-data_norm$norm # returns TRUE
+\dontrun{
+tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+data <- importData(tdm_file = tdm, corpus_file = corpus,
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+
+normalization(data, normty = "nchi", sc = 1000)
 }
 
 }
