@@ -1,8 +1,8 @@
 Package: cccc
 Title: Chronological Corpora Curve Clustering
 Version: 0.0.0.9000
-Authors@R:c(
-    person(given = "Matile",
+Authors@R: c(
+    person(given = "Matilde",
            family = "Trevisani",
            role = c("aut"),
            email = "matilde.trevisani@deams.units.it"),
@@ -17,7 +17,7 @@ Description: Tools for analyzing and visualizing the temporal evolution of terms
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports: 
     dplyr,
     ggnewscale,
@@ -37,3 +37,7 @@ Imports:
 Suggests: 
     rmarkdown,
     knitr
+VignetteBuilder: knitr
+Depends: 
+    R (>= 4.1.0)
+

@@ -8,12 +8,12 @@
 #' @param tdm_file Character. Path to the term-document matrix file (CSV or Excel).
 #'
 #' tdm_file description:
-#' - The first column must contain the list of terms, while all other columns must be labeled with the corresponding years.
+#' - The first column must contain the list of terms, while all other columns must be labeled with the corresponding years (or other time-points of reference).
 #'
 #' @param corpus_file Character. Path to the corpus information file (CSV or Excel).
 #'
 #' Corpus_file description:
-#' - The first column must contain the list of years.
+#' - The first column must contain the year (or other time-point).
 #' - The second column the total number of tokens per year.
 #' - The third column the number of documents per year.
 #' - The fourth column (if present) any additional metadata.
@@ -34,13 +34,14 @@
 #'     plus one column per year representing term frequency in that year.}
 #'   \item{corpus_info}{A tibble with corpus-level yearly metadata.
 #'     It includes the columns:
-#'     \code{years} (observation year),
+#'     \code{year} (observation year),
 #'     \code{dimCorpus} (total number of tokens),
 #'     \code{nDoc} (number of documents),
 #'     and optionally \code{metadata} (additional information).}
 #'   \item{norm}{Logical. Indicates whether the term-document matrix has been normalized (default is \code{FALSE}).}
 #'   \item{year_cols}{Numeric vector indicating which columns in the TDM refer to yearly frequencies.}
 #'   \item{zone}{Character vector of unique frequency zones used.}
+#'   \item{freq_int}{Character vector of unique frequency intervals used.}
 #'   \item{colors}{Character vector of default colors associated with zones.}
 #' }
 #'
@@ -82,19 +83,20 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
 
   switch(zone,
          stat={
-           Q <- quantile(-tdm$tot_freq, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+           Q <- quantile(tdm$tot_freq, probs = seq(0,1, by=0.25), na.rm = TRUE)
 
            # Zone variable - quartile distribution
-           tdm$zone <- cut(-tdm$tot_freq,
+           tdm$zone <- cut(tdm$tot_freq,
                           breaks = Q,
                           include.lowest = TRUE,
-                          labels = c("VH", "H", "L", "VL"))
+                          labels = c("VL", "L", "H", "VH"))
+           tdm$zone <- factor(tdm$zone, levels = c("VH", "H", "L", "VL"))
          },
          ling={
            tdm <- tdm %>% arrange(desc(tot_freq))
            freq_vector <- tdm$tot_freq
 
-           high_limit <- which(duplicated(freq_vector))[1] - 1
+           high_limit <- which(duplicated(freq_vector))[1] - 2
            if (is.na(high_limit)) high_limit <- 1
 
            sorted_unique <- sort(unique(freq_vector))
@@ -129,6 +131,7 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
   data <- list(tdm = tdm, corpus_info = corpus_info, norm=FALSE,
                year_cols = grep("\\d", names(tdm)),
                zone=unique(tdm$zone),
+               int_freq=unique(tdm$int_freq),
                colors_light=colorlist(type="light")[1:length(unique(tdm$zone))],
                colors_dark=colorlist(type="dark")[1:length(unique(tdm$zone))])
   data <- tdm2long(data)

@@ -18,14 +18,14 @@ importData(
 
 tdm_file description:
 \itemize{
-\item The first column must contain the list of terms, while all other columns must be labeled with the corresponding years.
+\item The first column must contain the list of terms, while all other columns must be labeled with the corresponding years (or other time-points of reference).
 }}
 
 \item{corpus_file}{Character. Path to the corpus information file (CSV or Excel).
 
 Corpus_file description:
 \itemize{
-\item The first column must contain the list of years.
+\item The first column must contain the year (or other time-point).
 \item The second column the total number of tokens per year.
 \item The third column the number of documents per year.
 \item The fourth column (if present) any additional metadata.
@@ -51,13 +51,14 @@ It contains the following columns:
 plus one column per year representing term frequency in that year.}
 \item{corpus_info}{A tibble with corpus-level yearly metadata.
 It includes the columns:
-\code{years} (observation year),
+\code{year} (observation year),
 \code{dimCorpus} (total number of tokens),
 \code{nDoc} (number of documents),
 and optionally \code{metadata} (additional information).}
 \item{norm}{Logical. Indicates whether the term-document matrix has been normalized (default is \code{FALSE}).}
 \item{year_cols}{Numeric vector indicating which columns in the TDM refer to yearly frequencies.}
 \item{zone}{Character vector of unique frequency zones used.}
+\item{freq_int}{Character vector of unique frequency intervals used.}
 \item{colors}{Character vector of default colors associated with zones.}
 }
 }

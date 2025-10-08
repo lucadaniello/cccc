@@ -8,7 +8,7 @@
 #'
 #' All measures are rescaled by user-defined factors to improve visual comparability.
 #'
-#' @param data A list contained the output of `importData()`
+#' @param data A list containing the output of `importData()`
 #' @param sc Numeric vector of length 4. Scaling factors for:
 #'   \code{nDoc}, \code{dimCorpus}, \code{Csum}, \code{Mcf}. Default: \code{c(1, 10, 10, 1)}.
 #' @param r Integer. Interval for thinning x-axis labels (default = 1 = show all).
@@ -34,7 +34,7 @@
 #' textty = "text",
 #' themety = "light",
 #' size_b = 2.5,
-#' x_lab = "years"
+#' x_lab = "year"
 #' )
 #'
 #' }
@@ -44,7 +44,7 @@ colMassPlot <- function(data,
                         textty = "text",
                         themety = "light",
                         size_b = 2.5,
-                        x_lab = "years") {
+                        x_lab = "year") {
 
   corpus <- data$corpus_info
   tdm <- data$tdm
@@ -78,18 +78,23 @@ colMassPlot <- function(data,
 
   plot_theme <- base_theme +
     theme(
-      plot.margin = margin(1, 1, 1, 1, unit = "lines"),
+      plot.margin = unit(c(.5,0.1,.25,.1), "line"),
       axis.text = element_text(size = rel(0.875)),
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = rel(0.85)),
       axis.title.x = element_text(margin = margin(t = 4)),
       axis.text.y = element_text(hjust = 0.5, vjust = 0.25),
       axis.ticks.length = unit(0.1, "cm"),
-      legend.text = element_text(size = rel(0.95), face = "bold", color = col_leg),
+      legend.text = element_text(size = rel(0.95), face = "bold",
+                                 color = col_leg, margin = margin(l = 0.25)),
       legend.background = element_rect(fill = NA),
       legend.key = element_rect(colour = NA, fill = NA),
       legend.position = "bottom",
       legend.box = "horizontal",
-      legend.key.width = unit(0.125, "in"),
+      legend.key.width = unit(0.001, "in"),
+      legend.key.spacing.x = unit(0.25, "in"),
+      legend.key.spacing.y = unit(0.01, "in"),
+      legend.margin = margin(t = 0.0, b = 0.0),
+      legend.title = element_blank(),
       panel.grid = element_blank()
     )
 
@@ -104,15 +109,15 @@ colMassPlot <- function(data,
       values = colors,
       breaks = c("nDoc", "dimCorpus", "Csum", "Mcf"),
       labels = c(
-        paste("Number of", textty),
-        paste0("Number of word-tokens (/ ", sc[2], ") in ", textty),
-        paste0("Sum of keyword frequencies (/ ", sc[3], ")"),
-        paste0("Max keyword frequency (/ ", sc[4], ")")
-      )
-    ) +
+        paste0("Number of ", textty, "s"),
+        paste0("Number of word-tokens (/", sc[2], ") in ", textty, "s"),
+        paste0("Sum of keyword frequencies (/", sc[3], ")"),
+        paste0("Max keyword frequency (/", sc[4], ")"))
+      ) +
     scale_y_continuous(expand = c(0.01, 0)) +
     scale_x_continuous(expand = c(0, 0.5), breaks = corpus$years, labels = x_labels) +
-    labs(x = x_lab, y = "Corpus Size / Frequency (rescaled)") +
+    labs(x = x_lab, y = "Corpus Size (rescaled)") +
+    guides(colour=guide_legend(nrow=2, byrow=FALSE)) +
     plot_theme
 
   return(g)

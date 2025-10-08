@@ -4,7 +4,7 @@
 #' and colored by their assigned frequency zone, combining both the zone
 #' and its frequency interval label.
 #'
-#' @param data A list contained the output of `importData()`
+#' @param data A list containing the output of `importData()`
 #'
 #' @return A `ggplot2` object showing the distribution of total frequencies by zone.
 #' The bars are colored by zone and frequency interval.
@@ -36,18 +36,30 @@ rowMassPlot <- function(data) {
       values = setNames(data$colors_light, levels(tdm$zone_label))
     ) +
     ggplot2::labs(
-      x = "Keywords",
+      x = "Keyword",
       y = "Total Frequency",
-      fill = "Keyword Zone [Frequency Interval]"
+      fill = "Frequency zone - frequency interval"
     ) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
-      legend.position = "bottom",
-      legend.box = "horizontal"
+      legend.text = element_text(size=rel(.7),
+                                 margin = margin(l = 0.4)),
+      legend.title = element_text(size=rel(.75)),
+      #legend.position = "bottom",
+      legend.position = c(0.39,-0.18),
+      #legend.justification='left',
+      legend.box = "horizontal",
+      #legend.box.margin = margin(0,0,0,-.5,"cm"),
+      legend.direction = "horizontal",
+      #legend.margin = margin(c(-.5,0,.0,-.0)),
+      legend.title.position = "bottom",
+      #legend.key.width = unit(0.15, "in"), legend.key.height = unit(0.15, "in"),
+      #legend.key.spacing.x = unit(10, "pt"),
+      plot.margin = unit(c(.1,0.1,2.05,.1), "line")
     ) +
-    ggplot2::guides(fill = ggplot2::guide_legend(reverse = TRUE))
+    ggplot2::guides(fill = ggplot2::guide_legend(keywidth = .5, keyheight = .5, reverse = TRUE))
 
   return(g)
 }
