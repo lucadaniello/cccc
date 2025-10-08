@@ -1,11 +1,39 @@
 Package: cccc
-Title: What the Package Does (One Line, Title Case)
+Title: Chronological Corpora Curve Clustering
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R:c(
+    person(given = "Matile",
+           family = "Trevisani",
+           role = c("aut"),
+           email = "matilde.trevisani@deams.units.it"),
+    person(given = "Luca",
+           family = "D'Aniello",
+           role = c("aut", "cre"),
+           email = "luca.daniello@unina.it")
+    )
+Description: Tools for analyzing and visualizing the temporal evolution of terms in a corpus. 
+    Includes methods for importing and normalizing term-document matrices, selecting and applying
+    optimal smoothing splines, and plotting functional trends.
+License: MIT + file LICENSE
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
+Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 RoxygenNote: 7.3.2
+Imports: 
+    dplyr,
+    ggnewscale,
+    ggplot2,
+    readr,
+    readxl,
+    stringr,
+    tidyr,
+    fda,
+    purrr,
+    tibble,
+    patchwork,
+    RColorBrewer,
+    aricode,
+    clusterCrit,
+    clusterSim
+Suggests: 
+    rmarkdown,
+    knitr
