@@ -147,15 +147,157 @@ apply(d_size[,-1], 2, max) %>% divide_by(sc)
 ymax <- apply(d_size[,-1], 2, max) %>% divide_by(sc) %>% max %>% print
 ```
 
-```{r colmass, echo=track, results=track, w=8, h=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens$/10$ in texts, column sum$/10$ in the TDM, maximum column frequency$/1$ in the TDM", fig.label="fig:colmass", fig.pos="p", out.width='100.0%'}
+```{r colmass, echo=track, results=track, w=8, h=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens(/$10$) in texts, column sum(/$10$) in the TDM, maximum column frequency in the TDM", fig.label="fig:colmass", fig.pos="p", out.width='100.0%'}
 
-#colmass_plot(d_size, sc, r = 1, textty, "light", x_leg = 0.60, x_lab = "year", size_b = 2.25)
 colMassPlot(data, sc = c(1, 10, 10, 1), r = 1, textty = "text", themety = "light", size_b = 2.5, x_lab = "year")
 
 ```
 
 
-### Curves
+### Temporal curves
 
-Original data: the overall curves and grouped by frequency class (with a sample for each class)
-(Figure \ref{fig:curves}-\ref{fig:facets})
+The overall frequency trajectories (curves) are shown for the original data (Figure \ref{fig:curves}) and, below, also separately for each frequency class or zone (with a sample for each class) (Figure \ref{fig:facets}).
+
+The plots are based on the long-format TDM stored in `data$tdm_long`, which has `year` as a group variable and `frequency` as the associated numerical variable.
+```{r dat_l, include=track, eval = T}
+tdm_l <- data$tdm_long 
+tdm_l %>% head; tdm_l %>% tail
+```
+
+```{r curves, eval=T, echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curves", fig.pos="p", out.width='100.0%'}
+
+curvePlot(data, r = 2, size_class = c(.2,.3,.4,.5))
+```
+
+```{r sample, message=T, include=T}
+r <- 3
+# seed <- Sys.time()
+seed <- 2222
+set.seed(seed)
+kw <- tdm_l %>% aggregate(keyword ~ zone, ., function(x) sample(unique(x), r))
+kw
+```
+
+
+```{r curvesEtctu, eval=T, dependson=c("sample"), echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curvesEtctu", fig.pos="p", out.width='100.0%'}
+
+ctu_noun <-  c("person", "object", "instruct", "incident")
+
+ctu_noun <- kw %>% pull(2) %>% as.data.frame() %>% pull(1)
+
+curveCtuPlot(data, ctu_noun = ctu_noun, r = 2, size_class = NULL)
+```
+
+```{r example_with_frequency, eval=T, message = F}
+library(dplyr)
+tdm %>% group_by(zone) %>% arrange(desc(tot_freq)) %>% slice_head(n = 3) %>% ungroup() %>% select(zone, keyword)
+```
+
+
+```{r facets, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis.", fig.label="fig:facets", fig.pos="p", out.width='100.0%'}
+
+facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+r = 4, scales = "free", leg = TRUE, size_class = NULL)
+```
+
+
+# Normalization
+
+
+```{r normalize, include=draft}
+
+options(digits=3)
+
+cat("\n###### normalization by column ######\n
+\n## subcorpus total #tokens (dimCorpus) ##\n")
+
+datnc <- normalization(data, normty = "nc", 1000)
+
+# datnc[,1:6] %>% head 
+# datnc[,-(1:2)] %>% max
+# # datnc[,-(1:2)] %>% apply(2,max)
+
+
+cat("\n###### normalization by row and col ######\n
+\n## chisquare-like ##\n")
+
+datnchi <- normalization(data, normty = "nchi", 1)
+
+# datnchi[,1:6] %>% head 
+# datnchi[,1:6] %>% tail 
+# datnchi[,-(1:2)] %>% max
+# # datnchi[,-(1:2)] %>% apply(2,max)
+
+cat("\n##  Max row freq and subcorpus total #tokens  ##\n\n")
+
+datnM <- normalization(data, normty = "nM", 1000)
+
+# datnM[,1:6] %>% head
+# # datnM[,-(1:2)] %>% apply(1,max)
+# # datnM[,-(1:2)] %>% apply(1,min)
+# #datnM[,-(1:2)] %>% apply(2,max)
+
+
+cat("\n## MinMax row freq and subcorpus total #tokens  ##\n")
+
+datnmM <- normalization(data, normty = "nmM", 1000)
+
+# datnmM[,1:6] %>% head 
+# # datnmM[,-(1:2)] %>% apply(1,max)
+# # datnmM[,-(1:2)] %>% apply(1,min)
+# #datnmM[,-(1:2)] %>% apply(2,max)
+# #datnmM[,-(1:2)] %>% apply(2,min)
+
+cat("\n## Non-linear row freq and subcorpus total #tokens ##\n")
+
+cat("\nNon-linear transformation:\n Difference from the minimum weights more when the distribution is positively asymmetric (p>0.5), viceversa, difference from the maximum weights more when the distribution is negatively asymmetric(p<0.5)\n")
+
+
+datnnl <- normalization(data, normty = "nnl", 1000, nnlty="M")
+# p_asy <- datnnl$p_asy
+# datnnl <- datnnl$datn
+# 
+# # # kw 379 has VL=1, p=1, then 0/0 when x=min
+# # datnnl[379,]
+# # datnnl[379,2+which(apply(datnnl[379,-(1:2)], 1, is.nan))] <- 0
+# # datnnl[379,]
+# 
+# # check any nonfinite value
+# apply(datnnl[,-(1:2)], 1, function(x){any(is.na(x))}) %>% sum
+# apply(datnnl[,-(1:2)], 1, function(x){any(is.infinite(x))}) %>% sum
+# apply(datnnl[,-(1:2)], 1, function(x){any(is.nan(x))}) %>% sum
+# 
+# datnnl[,1:6] %>% head
+# datnnl[,-(1:2)] %>% apply(1,max)
+# datnnl[,-(1:2)] %>% apply(1,min)
+# #datnmM[,-(1:2)] %>% apply(2,max)
+# #datnmM[,-(1:2)] %>% apply(2,min)
+# 
+# # cat("\nComparing MinMax to non-linear norm:\n")
+# # cbind(datnmM %>% filter(keyword%in%c("metro","prendere")) %>% t(),
+# # datnnl %>% filter(keyword%in%c("metro","prendere")) %>% t())[c(1:5, (n_d-4):n_d),]
+
+```
+
+```{r}
+names(datnc)
+datnc$norm; datnc$normty
+datnc$tdm %>% head
+datnc$tdm_long %>% head
+```
+
+
+```{r asy_eda, eval=T}
+options(digits=3)
+
+names(datnnl)
+temp <- datnnl$tdm[,c(1,4)] %>% cbind(datnnl$p_asy)
+# table(temp$zone, datnnl$p_asy>.5)
+# # temp %>% filter(p_asy<.5)
+# temp %>%
+#   group_by(zone) %>%
+#   summarise(min=min(p_asy), p25=quantile(p_asy,.25),me=median(p_asy),p75=quantile(p_asy,.75),max=max(p_asy), mean=mean(p_asy))
+
+```
+
+

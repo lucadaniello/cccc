@@ -108,8 +108,7 @@ facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.l
   # Imposta l’ordine manuale
   kw_df$keyword <- factor(kw_df$keyword, levels = ordered_keywords)
 
-  year <- data$corpus_info %>%  select(years) %>% pull() %>% unique()
-  n_d <- length(year)
+  year <- d$year %>% unique %>% as.numeric
   n_y <- diff(range(year))+1
   xaxlab <- year[1]+0:(n_y-1)
   xaxlab[-seq(1, n_y, by=r)] <- ""
@@ -149,13 +148,13 @@ facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.l
   if(scales=="fixed"){
     p <- p +
       facet_wrap(~zone,nrow=2) +
-      geom_line(data = d, aes(colour = zone), size = .1) +
+      geom_line(data = d, aes(colour = zone), linewidth = .1) +
       geom_line(data = kw_df, aes(colour = keyword)) +
       scale_color_manual(values = all_colors)
   } else {
     p <- p +
       facet_wrap(~zone, nrow = 2, scales = "free_y") +
-      geom_line(data = d, aes(colour = zone), size = .1) +
+      geom_line(data = d, aes(colour = zone), linewidth = .1) +
       geom_line(data = kw_df, aes(colour = keyword)) +
       scale_color_manual(values = all_colors)
   }

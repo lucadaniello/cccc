@@ -1,7 +1,7 @@
 #' Import Term Document Matrix and Corpus Information
 #'
 #' This function reads and processes a Term Document Matrix (TDM) and corpus information from CSV or Excel files.
-#' It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword,
+#' It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword (by which it reorders the TDM),
 #' and classifies terms into frequency zones. It also creates a column representing
 #' the frequency interval associated with each zone.
 #'
@@ -72,7 +72,8 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
     rename(keyword = 1) %>%
     mutate(across(all_of(year_cols), as.numeric),
            keyword = str_replace_all(keyword, "\\?", ""),
-           tot_freq = rowSums(across(all_of(year_cols)), na.rm = TRUE))
+           tot_freq = rowSums(across(all_of(year_cols)), na.rm = TRUE)) %>%
+    arrange(desc(tot_freq))
 
   if (verbose) {
     n_missing <- sum(is.na(select(tdm, all_of(year_cols))))

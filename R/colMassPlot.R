@@ -12,7 +12,7 @@
 #' @param sc Numeric vector of length 4. Scaling factors for:
 #'   \code{nDoc}, \code{dimCorpus}, \code{Csum}, \code{Mcf}. Default: \code{c(1, 10, 10, 1)}.
 #' @param r Integer. Interval for thinning x-axis labels (default = 1 = show all).
-#' @param textty Character. Unit of analysis for legend (e.g. "text", "place", "paper").
+#' @param textty Character. Unit of analysis for legend (e.g. "text", "titles", "abstracts").
 #' @param themety Character. Either \code{"light"} (default) or \code{"dark"}.
 #' @param size_b Numeric. Base size for bar lines (default = 2.5).
 #' @param x_lab Character. X-axis label (default = "year").

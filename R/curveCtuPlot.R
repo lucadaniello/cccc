@@ -1,8 +1,8 @@
 #' Plot of Temporal Curves for Frequency Zones and Example Keywords
 #'
 #' This function generates a line plot of keyword frequency over time,
-#' distinguishing between predefined frequency zones (high, medium, low)
-#' and highlighting three example keywords with custom colors.
+#' distinguishing between predefined frequency zones
+#' and highlighting, for each zone, an example keyword with custom colors.
 #' It supports both normalized and raw frequencies, and includes
 #' customizable themes, axis labeling, and adaptive thinning of the x-axis labels.
 #'
@@ -12,10 +12,10 @@
 #' and the example keywords are displayed with a distinct legend.
 #'
 #' @param data A list containing the output of `importData()`
-#' @param ctu_noun Character vector of length 3. Specifies exactly three example keywords to highlight in the plot. Each keyword must be present in a different frequency zone (high, medium, low).
+#' @param ctu_noun Character vector of length three or four. Specifies exactly three example keywords to highlight in the plot. Each keyword must be present in a different frequency zone (high, medium, low).
 #' @param r Integer. Thinning rate for the x-axis labels; only one label every \code{r} years will be shown.
 #' @param themety Character. Theme type, either \code{"light"} (default) or \code{"dark"}. This affects both plot aesthetics and color palettes.
-#' @param size_class Optional numeric vector of length 3. Defines the line widths for the three zones (high, medium, low), respectively. If \code{NULL}, defaults are used based on the theme.
+#' @param size_class Optional numeric vector of length three or four. Defines the line widths for the three zones (high, medium, low), respectively. If \code{NULL}, defaults are used based on the theme.
 #' @param x_lab Character. Label for the x-axis. Defaults to \code{"year"}.
 #'
 #' @return A \code{ggplot} object displaying keyword frequency trajectories over time,
@@ -77,10 +77,10 @@ curveCtuPlot <- function(data,
   }
   names(size_class) <- zone_levels
 
-  year_vec <- sort(unique(dat_l$year))
-  n_y <- length(year_vec)
-  xaxlab <- year_vec
-  xaxlab[-seq(1, n_y, by = r)] <- ""
+  year <- dat_l$year %>% unique %>% as.numeric
+  n_y <- diff(range(year))+1
+  xaxlab <- year[1]+0:(n_y-1)
+  xaxlab[-seq(1, n_y, by=r)] <- ""
 
   zone_labels <- dat_l %>%
     distinct(zone, int_freq) %>%
@@ -105,6 +105,7 @@ curveCtuPlot <- function(data,
       legend.position = "bottom",
       legend.box = "vertical",
       legend.box.spacing = unit(0.3, "lines"),
+      legend.margin = margin(t = -5, b = -2),
       legend.background = element_rect(fill = NA),
       legend.key = element_rect(colour = NA, fill = NA),
       legend.text = element_text(face = "bold", size = rel(0.85), color = col_leg),
@@ -131,7 +132,7 @@ curveCtuPlot <- function(data,
     ggnewscale::new_scale_colour() +
     geom_line(data = example_df,
               aes(x = chrono, y = freq, group = example, colour = example),
-              linewidth = 1) +
+              linewidth = .8) +
     scale_colour_manual(
       name = "Example Keywords",
       values = col_kw,

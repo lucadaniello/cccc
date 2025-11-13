@@ -46,17 +46,17 @@ tdm2long <- function(data){
   ind_d <- data$year_cols
   n_d <- length(ind_d)
   n <- nrow(data$tdm)
-  year <- data$corpus_info %>% select(years) %>% pull()
+  year <- data$tdm %>% names %>% .[ind_d] %>% as.numeric
+  chrono <- 1+year-year[1]
+
   data$tdm_long <- data$tdm %>%
     pivot_longer(
       cols = (min(ind_d)):ncol(.),  # columns to pivot
       names_to = "year",
       values_to = "freq"
     ) %>% arrange(year, desc(tot_freq)) %>%
-    mutate(chrono=rep(1:n_d,rep(n,n_d))) %>%
-    group_by(year) %>%
-    mutate(cont=rep(1:n())) %>%
-    ungroup() %>%
+    mutate(cont=rep(1:n_d,rep(n,n_d)),
+           chrono=rep(chrono,rep(n,n_d))) %>%
     select("keyword", "year", "cont", "chrono", "freq","tot_freq", "int_freq","zone")
   return(data)
 }
