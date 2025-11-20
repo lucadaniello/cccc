@@ -7,25 +7,31 @@
 rowMassPlot(data)
 }
 \arguments{
-\item{data}{A list contained the output of \code{importData()}}
+\item{data}{A list object returned by \code{importData()}, which must contain:
+\itemize{
+\item \code{tdm}: a tibble with columns \code{keyword}, \code{tot_freq}, \code{zone}, and \code{int_freq}
+\item \code{colors_light}: a character vector of colors for the frequency zones
+}}
 }
 \value{
-A \code{ggplot2} object showing the distribution of total frequencies by zone.
-The bars are colored by zone and frequency interval.
+A \code{ggplot2} object displaying keyword frequencies as a bar plot.
+The x-axis represents keywords (unlabeled for clarity), and the y-axis shows total frequency.
+Bars are colored by frequency zone, with a horizontal legend at the bottom.
 }
 \description{
-This function creates a bar plot of keywords ordered by their total frequency
-and colored by their assigned frequency zone, combining both the zone
-and its frequency interval label.
+This function creates a horizontal bar plot showing the total frequency of each keyword,
+ordered from lowest to highest frequency. Each bar is colored according to its assigned
+frequency zone (e.g., VH, H, L, VL for statistical zones or high, medium, low for linguistic zones).
+The legend displays both the zone label and its corresponding frequency interval.
 }
 \examples{
 \dontrun{
 tdm <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
-sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+  sep_tdm = ";", sep_corpus_info = ";", zone = "stat")
 
-rowMassPlot(tdm = data$tdm)
+# Generate the plot
+rowMassPlot(data)
 }
-
 }

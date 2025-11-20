@@ -14,48 +14,79 @@ curveCtuPlot(
 )
 }
 \arguments{
-\item{data}{A list containing the output of \code{importData()}}
+\item{data}{A list object returned by \code{importData()}, containing:
+\itemize{
+\item \code{tdm_long}: long-format frequency data
+\item \code{tdm}: original term-document matrix
+\item \code{zone}: factor levels for frequency zones
+\item \code{colors_light} and \code{colors_dark}: zone color palettes
+}}
 
-\item{ctu_noun}{Character vector of length 3. Specifies exactly three example keywords to highlight in the plot. Each keyword must be present in a different frequency zone (high, medium, low).}
+\item{ctu_noun}{Character vector with exactly one keyword per frequency zone.
+The number of keywords must match the number of zones in the data
+(e.g., 4 for statistical zones: VH, H, L, VL; or 3 for linguistic zones: high, medium, low).
+Each keyword must exist in the dataset and belong to a different zone.}
 
-\item{r}{Integer. Thinning rate for the x-axis labels; only one label every \code{r} years will be shown.}
+\item{r}{Integer. Interval for thinning x-axis labels. If \code{r = 2},
+only every second year is labeled. Default: \code{1} (show all years).}
 
-\item{themety}{Character. Theme type, either \code{"light"} (default) or \code{"dark"}. This affects both plot aesthetics and color palettes.}
+\item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
 
-\item{size_class}{Optional numeric vector of length 3. Defines the line widths for the three zones (high, medium, low), respectively. If \code{NULL}, defaults are used based on the theme.}
+\item{size_class}{Numeric vector specifying line widths for each frequency zone.
+Must have length equal to the number of zones. If \code{NULL}, defaults to
+\code{rep(0.3, n_zones)} for light theme or \code{rep(0.5, n_zones)} for dark theme.}
 
-\item{x_lab}{Character. Label for the x-axis. Defaults to \code{"year"}.}
+\item{x_lab}{Character. Label for the x-axis. Default: \code{"year"}.}
 }
 \value{
-A \code{ggplot} object displaying keyword frequency trajectories over time,
-with frequency zones visually distinguished by color and line thickness, and
-the three specified keywords highlighted using a separate color legend.
+A \code{ggplot} object with two legends:
+\itemize{
+\item Top legend: "Frequency Zone" showing zone colors and intervals
+\item Bottom legend: "Example Keywords" showing highlighted keywords
+}
 }
 \description{
 This function generates a line plot of keyword frequency over time,
-distinguishing between predefined frequency zones (high, medium, low)
-and highlighting three example keywords with custom colors.
-It supports both normalized and raw frequencies, and includes
-customizable themes, axis labeling, and adaptive thinning of the x-axis labels.
+with two distinct visual layers:
+\enumerate{
+\item Background layer showing all keywords grouped by frequency zone (with transparency)
+\item Foreground layer highlighting specific example keywords (one per zone) with solid colors
+}
 }
 \details{
-The plot uses two separate color scales: one for
-the frequency zones and one for the example keywords. Each zone is
-labeled with its frequency interval,
-and the example keywords are displayed with a distinct legend.
+The plot uses \code{ggnewscale::new_scale_colour()} to apply two separate color scales,
+allowing both zone colors and example keyword colors to coexist in the same plot.
+
+Zone lines are displayed with 70\\% transparency (alpha = "70") to create a subtle
+background layer, while example keywords are drawn with full opacity and thicker
+lines (linewidth = 0.8) for emphasis.
+
+The function validates that:
+\itemize{
+\item The number of keywords in \code{ctu_noun} matches the number of zones
+\item All specified keywords exist in the dataset
+}
 }
 \examples{
 \dontrun{
 tdm <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
-sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+  sep_tdm = ";", sep_corpus_info = ";", zone = "stat")
 
+# With statistical zones (4 zones)
 curveCtuPlot(data,
-                ctu_noun = c("person", "object", "instruct", "incident"),
-                r = 1,
-                themety = "light",
-                size_class = NULL,
-                x_lab = "year")
+  ctu_noun = c("person", "object", "instruct", "incident"),
+  r = 2,
+  themety = "light"
+)
+
+# With linguistic zones (3 zones)
+data_ling <- importData(tdm_file = tdm, corpus_file = corpus, zone = "ling")
+curveCtuPlot(data_ling,
+  ctu_noun = c("frequent_word", "medium_word", "rare_word"),
+  r = 1
+)
 }
+
 }

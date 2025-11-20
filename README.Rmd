@@ -47,7 +47,6 @@ curve <- curvePlot(data = data,
                    r = 1,
                    themety = "light",
                    size_class = NULL,
-                   x_leg = 0.85,
                    x_lab = "years"
 )
 curve
@@ -111,16 +110,20 @@ curve_nchi <- curvePlot(data = data_nchi,
            r = 1,
            themety = "light",
            size_class = NULL,
-           x_leg = 0.85,
            x_lab = "years"
 )
 curve_nchi
 ```
 
 ```{r}
-facet_plot <- facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
-                       r = 4, scales = "free", leg = TRUE, themety = "light",
-                       size_class = NULL, x_lab = "year")
+facet_plot <- facetPlot(data, 
+                        keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+                       r = 4, 
+                       scales = "free", 
+                       leg = TRUE, 
+                       themety = "light",
+                       size_class = NULL, 
+                       x_lab = "year")
 facet_plot
 ```
 

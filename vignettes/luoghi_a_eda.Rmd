@@ -3,166 +3,254 @@ title: "Luoghi: EDA"
 author: "matilde trevisani"
 date: "`r Sys.Date()`"
 output: 
- rmarkdown::html_vignette:
-   toc: true
-   toc_depth: 3
-   dev: CairoPNG
-   gallery: true
-   thumbnails: true    # render figures as "miniatures"
-   lightbox: true    # figures can be enlarged when clicked
-   highlight: espresso    # textmate  breezedark  haddock  espress monochrome  pygments
-   df_print: "tibble" # other options: paged, kable, tibble
-   code_folding: show
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    fig_width: 8
+    fig_height: 5
 vignette: >
-  %\VignetteIndexEntry{Tutorial: EDA}
+  %\VignetteIndexEntry{Luoghi: EDA}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r optcmd, echo=FALSE, cache=F}
-draft <- T
-track <- T
-# figeval <- T
-# res <- "markup"
-# raw <- T  # load/save to data-raw (within installation generates error)
-# over=T
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = 'center',
+  fig.width = 8,
+  fig.height = 5,
+  out.width = '100%',
+  warning = FALSE,
+  message = FALSE
+)
+
 ```
 
-```{r utils, echo=F}
-nam_work <- "luoghi"
-```
-
-
-
-```{r setup, include=FALSE, cache=F}
-knitr::opts_chunk$set(echo = track, fig.path = paste0(nam_work,'_fig/eda/'), collapse = TRUE, comment = "#>", cache = 2, cache.path=paste0(nam_work,'_cache/'), cache.comments = F, autodep = TRUE, cache.extra = knitr::rand_seed)
-knitr::opts_chunk$set(fig.align = 'center', crop = TRUE) 
-knitr::opts_chunk$set(dev = c('CairoPNG','CairoPDF')) 
-knitr::opts_knit$set(aliases=c(h = 'fig.height', w = 'fig.width'), unnamed.chunk.label = "fig")
-#knit_hooks$set(crop = hook_pdfcrop)
-#opts_knit$set(global.par = TRUE)
-```
-
-
-
-```{r lib, include=FALSE, cache=F}
-# # Already in DESCRIPTION the following libraries
-library(magrittr) # %*%, divide_by
-# library(dplyr) 
-# library(ggplot2)
-# library(reshape2) # melt
-# library(gridExtra) # grid.arrange
-library(ggpubr) # ggarrange
-library(tibble) # as_tibble, rownames_to_column
-# #library(tidyverse) # contains
-# # dplyr, ggplot2, magrittr, tibble, and many others
+```{r packages, include=FALSE}
+# Main package
 library(cccc)
-```
 
+# Data manipulation
+library(dplyr)
+library(tibble)
+
+# Visualization
+library(ggplot2)
+library(patchwork)
+
+# Interactive tables
+library(DT)
+```
 
 # Data
 
 ## Raw data
 
 For illustration we consider the data extracted from a corpus of literaly prose of the RIND project. It is a sample of 500 texts from a corpus of 1,000 texts comprising novels and short story collections written by Italian authors and translated from other languages, published between 1830 and 1930. Data consist in a term-document matrix (TDM) with lexical units (one-gram and n-gram `Lemma`) by row and their frequencies (in the texts published in each year) by column, and a corpus-level metadata table with the total number of words (tokens) in the texts (`tot`) and the number of texts (`testi`) for each year.
-```{r rawdata, echo=track, eval=T}
-# load raw data.
-# tdm and corpus raw data can be read from extdata folder of cccc library
+
+```{r load-data}
+# Load raw data from package
 tdm_filename <- system.file("extdata", "tdm_RIND_luoghi.csv", package = "cccc")
 corpus_filename <- system.file("extdata", "corpus_info_RIND.csv", package = "cccc")
+
+# Check files exist
+if (tdm_filename == "" || corpus_filename == "") {
+  stop("Example data files not found")
+}
+
 tdm <- read.csv2(tdm_filename)
-corpus <- read.csv2(corpus_filename)  
-tdm 
-corpus 
+corpus <- read.csv2(corpus_filename)
 ```
+
+```{r show-raw-data}
+datatable(
+  tdm,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix (raw data)"
+)
+
+datatable(
+  corpus,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Corpus Information"
+)
+```
+
 Raw data must be in CSV or Excel format, with the TDM having keywords^[We call "keywords" all the lexical units represented in the TDM as they are obtained from a selection of the original textual units extracted from the corpus.] in the first column and yearly frequencies in subsequent columns, and the corpus metadata containing at least year, total number of tokens and number of documents per year (second and third column respectively, any additional metadata in the fourth column if present). Note that time-points defining the subcorpora (of the diachronic corpus) may be of any temporal scale (most frequently they are years).
 
 Raw data are processed by the function `importData()` which standardizes the format, renames columns, cleans keywords, and computes the total frequency per keyword (by which it reorders the TDM, from the most to the least frequent). Furtherly, it classifies terms into frequency zones and creates a column representing the frequency interval associated with each zone.
-```{r cleanup, message=T, eval=T}
-data <- importData(tdm_file = tdm_filename, corpus_file = corpus_filename)
+
+```{r import-data}
+data <- importData(
+  tdm_file = tdm_filename, 
+  corpus_file = corpus_filename,
+  sep_tdm = ";",
+  sep_corpus_info = ";",
+  zone = "stat",
+  verbose = FALSE
+)
+
 tdm <- data$tdm
 corpus_info <- data$corpus_info
-tdm 
-corpus_info
 ```
+
+```{r show-imported-data}
+datatable(
+  tdm,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix (processed)"
+)
+
+datatable(
+  corpus_info,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Corpus Information (processed)"
+)
+```
+
 Other information returned by `importData()` are whether the TDM has been normalized (default is FALSE), which columns in the TDM refer to yearly frequencies, the unique frequency zones and other items for graphical use.
-```{r info, echo=track, eval=T}
+
+```{r data-info}
 names(data)
-data$norm; data$year_cols
+data$norm
+data$year_cols
 ```
 
 ### Frequency class
 
 Keyword total frequency is highly variable. For convenience, keywords are grouped by their frequency class.
 The default zone classification method is statistical, based on quartiles or balanced classes. The zones and their associated frequency intervals are:
-```{r zones, eval=T}
-data$zone; data$int_freq %>% noquote()
-tdm$zone %>% table()
-# check quartiles 
-cut(tdm$tot_freq, breaks=quantile(tdm$tot_freq, probs = seq(0,1, by=0.25)), include.lowest = T) %>% table()
+
+```{r zones}
+data$zone
+noquote(data$int_freq)
+table(tdm$zone)
+
+# Check quartiles
+cut(
+  tdm$tot_freq, 
+  breaks = quantile(tdm$tot_freq, probs = seq(0, 1, by = 0.25)), 
+  include.lowest = TRUE
+) %>% table()
 ```
 
 We can also switch to a classification method based on linguistic frequency zones, thus obtaining:
-```{r linguistic, message=T, eval=T}
-data_ling <- importData(tdm_file = tdm_filename, corpus_file = corpus_filename, zone="ling", verbose = F)
+
+```{r linguistic-zones}
+data_ling <- importData(
+  tdm_file = tdm_filename, 
+  corpus_file = corpus_filename,
+  sep_tdm = ";",
+  sep_corpus_info = ";",
+  zone = "ling", 
+  verbose = FALSE
+)
+
 tdm_ling <- data_ling$tdm
-tdm_ling 
 data_ling$zone
-data_ling$int_freq %>% noquote()
-tdm_ling$zone %>% table()
+noquote(data_ling$int_freq)
+table(tdm_ling$zone)
 ```
 
-Function `rowMassPlot`illustrates graphically the word total frequency and the zone partition by frequency zones (quartiles at left, linguistic frequency zones at right in Figure \ref{fig:rowmass}).
-
-```{r, eval = F}
-rowMassPlot(data)
-rowMassPlot(data_ling)
+```{r show-linguistic-tdm}
+datatable(
+  tdm_ling,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix with linguistic frequency zones"
+)
 ```
-```{r rowmass, echo = F, out.width='80%', w = 6, h = 2.8, warning=track, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)", fig.label="fig:rowmass", fig.show='hold', fig.pos="p", eval=T}
+
+Function `rowMassPlot`illustrates graphically the word total frequency and the zone partition by frequency zones (quartiles at left, linguistic frequency zones at right in Figure below).
+
+```{r rowmass-plot, fig.width=10, fig.height=4, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)"}
 p1 <- rowMassPlot(data)
 p2 <- rowMassPlot(data_ling)
-ggarrange(p1, ggplot() + theme_void(), p2, nrow = 1, widths = c(1, 0.1, 1))
-#labels = c("A", "", "B")
+
+p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
 ```
-
-
 
 ### Subcorpora dimension
 
-We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots (Figure \ref{fig:colmass}).
+We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots.
 
-```{r colscale, echo=track, eval=T}
+```{r subcorpora-size}
 ind_d <- data$year_cols
-Csum <- tdm[,ind_d] %>% apply(2,sum,na.rm=T) 
-Mcf <- tdm[,ind_d] %>% apply(2,max,na.rm=T) 
-d_size <- corpus_info[,c(1,3,2)] %>% cbind(Csum, Mcf)
-d_size
-d_size[,-1] %>% summary
-d_size[,-c(1,5)] %>% apply(2,sum)
+Csum <- tdm[, ind_d] %>% apply(2, sum, na.rm = TRUE)
+Mcf <- tdm[, ind_d] %>% apply(2, max, na.rm = TRUE)
+
+d_size <- corpus_info[, c(1, 3, 2)] %>% cbind(Csum, Mcf)
+
+datatable(
+  d_size,
+  options = list(
+    pageLength = 20,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Subcorpora dimensions by year"
+)
+
+summary(d_size[, -1])
+apply(d_size[, -c(1, 5)], 2, sum)
 ```
 
-```{r rescaling, eval=T}
-# Identify a proper rescaling before making the plot of temporal dimensions.
-sc <- c(1, 10000, 100, 10)
-apply(d_size[,-1], 2, max) %>% divide_by(sc)
-ymax <- apply(d_size[,-1], 2, max) %>% divide_by(sc) %>% max %>% print
+```{r rescaling}
+# Identify a proper rescaling before making the plot of temporal dimensions
+sc <- c(1, 50000, 400, 100)
+apply(d_size[, -1], 2, max) / sc
+ymax <- max(apply(d_size[, -1], 2, max) / sc)
+ymax
 ```
 
-```{r colmass, echo=track, results=track, w=8, h=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens$/10$ in texts, column sum$/10$ in the TDM, maximum column frequency$/1$ in the TDM", fig.label="fig:colmass", fig.pos="p", out.width='100.0%', eval=T}
-
-colMassPlot(data, sc = c(1, 50000, 400, 100), r = 2, textty = "text", themety = "light", size_b = 1.5, x_lab = "year")
-
+```{r colmass-plot, fig.width=8, fig.height=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens$/10$ in texts, column sum$/10$ in the TDM, maximum column frequency$/1$ in the TDM"}
+colMassPlot(
+  data, 
+  sc = c(1, 50000, 400, 100), 
+  r = 2, 
+  textty = "text", 
+  themety = "light", 
+  size_b = 1.5, 
+  x_lab = "year"
+)
 ```
-
 
 ### Curves
 
 Original data: the overall curves and grouped by frequency class (with a sample for each class)
-(Figure \ref{fig:curves}-\ref{fig:facets})
 
 
-```{r curves, eval=T, echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curves", fig.pos="p", out.width='100.0%'}
-
+```{r curves-plot, fig.width=8, fig.height=5, fig.cap="Keyword trajectories (original data)"}
 curvePlot(data, r = 3)
-
 ```
+
+<!-- # Session Information -->
+
+<!-- # ```{r session-info} -->
+<!-- # sessionInfo() -->
+<!-- # ``` -->

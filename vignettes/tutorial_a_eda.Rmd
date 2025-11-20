@@ -1,303 +1,414 @@
 ---
-title: "Tutorial: EDA"
+title: "Tutorial: Exploratory Data Analysis EDA"
 author: "matilde trevisani"
 date: "`r Sys.Date()`"
 output: 
- rmarkdown::html_vignette:
-   toc: true
-   toc_depth: 3
-   dev: CairoPNG
-   gallery: true
-   thumbnails: true    # render figures as "miniatures"
-   lightbox: true    # figures can be enlarged when clicked
-   highlight: espresso    # textmate  breezedark  haddock  espress monochrome  pygments
-   df_print: "tibble" # other options: paged, kable, tibble
-   code_folding: show
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    fig_width: 8
+    fig_height: 5
 vignette: >
-  %\VignetteIndexEntry{Tutorial: EDA}
+  %\VignetteIndexEntry{Tutorial: Exploratory Data Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r optcmd, echo=FALSE, cache=F}
-draft <- T
-track <- T
-# figeval <- T
-# res <- "markup"
-# raw <- T  # load/save to data-raw (within installation generates error)
-# over=T
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = 'center',
+  fig.width = 8,
+  fig.height = 5,
+  out.width = '100%',
+  warning = FALSE,
+  message = FALSE
+)
+
+# Cairo opzionale per figure di alta qualità
+if (requireNamespace("Cairo", quietly = TRUE)) {
+  knitr::opts_chunk$set(dev = 'png', dev.args = list(type = "cairo"))
+}
 ```
 
-```{r utils, echo=F}
-nam_work <- "JPSP"
-```
-
-
-
-```{r setup, include=FALSE, cache=F}
-knitr::opts_chunk$set(echo = track, fig.path = paste0(nam_work,'_fig/eda/'), collapse = TRUE, comment = "#>", cache = 2, cache.path=paste0(nam_work,'_cache/'), cache.comments = F, autodep = TRUE, cache.extra = knitr::rand_seed)
-knitr::opts_chunk$set(fig.align = 'center', crop = TRUE) 
-knitr::opts_chunk$set(dev = c('CairoPNG','CairoPDF')) 
-knitr::opts_knit$set(aliases=c(h = 'fig.height', w = 'fig.width'), unnamed.chunk.label = "fig")
-#knit_hooks$set(crop = hook_pdfcrop)
-#opts_knit$set(global.par = TRUE)
-```
-
-
-
-```{r lib, include=FALSE, cache=F}
-# # Already in DESCRIPTION the following libraries
-library(magrittr) # %*%, divide_by
-# library(dplyr) 
-# library(ggplot2)
-# library(reshape2) # melt
-# library(gridExtra) # grid.arrange
-library(ggpubr) # ggarrange
-library(tibble) # as_tibble, rownames_to_column
-# #library(tidyverse) # contains
-# # dplyr, ggplot2, magrittr, tibble, and many others
+```{r packages, include=FALSE}
+# Main package
 library(cccc)
-```
 
+# Data manipulation
+library(dplyr)
+library(tibble)
+
+# Visualization
+library(ggplot2)
+library(patchwork)
+
+# Interactive tables
+library(DT)
+```
 
 # Data
 
 ## Raw data
 
 For illustration we consider the data extracted from the titles of *Journal of Personality and Social Psychology* articles from 1965 to 2021. They consist in a term-document matrix (TDM) with lexical units (words or multi-word expressions) by row and their frequencies (in the titles of articles published in each year) by column, and a corpus-level metadata table with the total number of words in the articles (`Dim`), the number of articles (`Nart`) and  the reference volume for each year.
-```{r rawdata, echo=track}
-# load raw data.
-# tdm and corpus raw data can be read from extdata folder of cccc library
+
+```{r load-data}
+# Load raw data from package
 tdm_filename <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus_filename <- system.file("extdata", "corpus.csv", package = "cccc")
+
+# Check files exist
+if (tdm_filename == "" || corpus_filename == "") {
+  stop("Example data files not found")
+}
+
 tdm <- read.csv2(tdm_filename)
-corpus <- read.csv2(corpus_filename)  
-tdm 
-corpus 
+corpus <- read.csv2(corpus_filename)
 ```
+
+```{r show-raw-data}
+datatable(
+  tdm,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix (raw data)"
+)
+
+datatable(
+  corpus,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Corpus Information"
+)
+```
+
 Raw data must be in CSV or Excel format, with the TDM having keywords^[We call "keywords" all the lexical units represented in the TDM as they are obtained from a selection of the original textual units extracted from the corpus.] in the first column and yearly frequencies in subsequent columns, and the corpus metadata containing at least year, total number of tokens and number of documents per year (second and third column respectively, any additional metadata in the fourth column if present). Note that time-points defining the subcorpora (of the diachronic corpus) may be of any temporal scale (most frequently they are years).
 
-Raw data are processed by the function `importData()` which standardizes the format, renames columns, cleans keywords, and computes the total frequency per keyword. Furtherly, it classifies terms into frequency zones and creates a column representing the frequency interval associated with each zone.
-```{r cleanup, message=T, eval=T}
-data <- importData(tdm_file = tdm_filename, corpus_file = corpus_filename)
+Raw data are processed by the function `importData()` which standardizes the format, renames columns, cleans keywords, and computes the total frequency per keyword. Furthermore, it classifies terms into frequency zones and creates a column representing the frequency interval associated with each zone.
+
+```{r import-data}
+data <- importData(
+  tdm_file = tdm_filename, 
+  corpus_file = corpus_filename,
+  sep_tdm = ";",
+  sep_corpus_info = ";",
+  zone = "stat",
+  verbose = FALSE
+)
+
 tdm <- data$tdm
 corpus_info <- data$corpus_info
-tdm 
-corpus_info
 ```
+
+```{r show-imported-data}
+datatable(
+  tdm,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix (processed)"
+)
+
+datatable(
+  corpus_info,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Corpus Information (processed)"
+)
+```
+
 Other information returned by `importData()` are whether the TDM has been normalized (default is FALSE), which columns in the TDM refer to yearly frequencies, the unique frequency zones and other items for graphical use.
-```{r info, echo=track}
+
+```{r data-info}
 names(data)
-data$norm; data$year_cols
+data$norm
+data$year_cols
 ```
 
 ### Frequency class
 
 Keyword total frequency is highly variable. For convenience, keywords are grouped by their frequency class.
 The default zone classification method is statistical, based on quartiles or balanced classes. The zones and their associated frequency intervals are:
+
 ```{r zones}
-data$zone; data$int_freq %>% noquote()
-tdm$zone %>% table()
-# check quartiles 
-cut(tdm$tot_freq, breaks=quantile(tdm$tot_freq, probs = seq(0,1, by=0.25)), include.lowest = T) %>% table()
+data$zone
+noquote(data$int_freq)
+table(data$tdm$zone)
+
+# Check quartiles
+cut(
+  tdm$tot_freq, 
+  breaks = quantile(tdm$tot_freq, probs = seq(0, 1, by = 0.25)), 
+  include.lowest = TRUE
+) %>% table()
 ```
 
-We can also switch to a classification method based on linguistic frequency zones, then obtaining:
-```{r linguistic, message=T, eval=T}
-data_ling <- importData(tdm_file = tdm_filename, corpus_file = corpus_filename, zone="ling", verbose = F)
+We can also switch to a classification method based on linguistic frequency zones:
+
+```{r linguistic-zones}
+data_ling <- importData(
+  tdm_file = tdm_filename, 
+  corpus_file = corpus_filename,
+  sep_tdm = ";",
+  sep_corpus_info = ";",
+  zone = "ling", 
+  verbose = FALSE
+)
+
 tdm_ling <- data_ling$tdm
-tdm_ling 
 data_ling$zone
-data_ling$int_freq %>% noquote()
+noquote(data_ling$int_freq)
 ```
 
-Function `rowMassPlot`illustrates graphically the word total frequency and the zone partition by quartiles and by linguistic frequency zones (Figure \ref{fig:rowmass}).
-
-```{r, eval = F}
-rowMassPlot(data)
-rowMassPlot(data_ling)
+```{r show-linguistic-tdm}
+datatable(
+  tdm_ling,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix with linguistic frequency zones"
+)
 ```
-```{r rowmass, echo = F, out.width='80%', w = 6, h = 2.8, warning=track, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)", fig.label="fig:rowmass", fig.show='hold', fig.pos="p"}
+
+Function `rowMassPlot` illustrates graphically the word total frequency and the zone partition by quartiles and by linguistic frequency zones.
+
+```{r rowmass-plot, fig.width=10, fig.height=4, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)"}
 p1 <- rowMassPlot(data)
 p2 <- rowMassPlot(data_ling)
-ggarrange(p1, ggplot() + theme_void(), p2, nrow = 1, widths = c(1, 0.1, 1))
-#labels = c("A", "", "B")
+
+p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
 ```
-
-
 
 ### Subcorpora dimension
 
-We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots (Figure \ref{fig:colmass}).
+We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`).
 
-```{r colscale, echo=track}
+```{r subcorpora-size}
 ind_d <- data$year_cols
-Csum <- tdm[,ind_d] %>% apply(2,sum,na.rm=T)
-Mcf <- tdm[,ind_d] %>% apply(2,max,na.rm=T)
-d_size <- corpus_info[,c(1,3,2)] %>% cbind(Csum, Mcf)
-d_size 
-d_size[,-1] %>% summary
-d_size[,-c(1,5)] %>% apply(2,sum)
+Csum <- tdm[, ind_d] %>% apply(2, sum, na.rm = TRUE)
+Mcf <- tdm[, ind_d] %>% apply(2, max, na.rm = TRUE)
+
+d_size <- corpus_info[, c(1, 3, 2)] %>% cbind(Csum, Mcf)
+
+datatable(
+  d_size,
+  options = list(
+    pageLength = 20,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Subcorpora dimensions by year"
+)
+
+summary(d_size[, -1])
+apply(d_size[, -c(1, 5)], 2, sum)
 ```
+
+Identify proper rescaling before plotting:
 
 ```{r rescaling}
-# Identify a proper rescaling before making the plot of temporal dimensions.
 sc <- c(1, 10, 10, 1)
-apply(d_size[,-1], 2, max) %>% divide_by(sc)
-ymax <- apply(d_size[,-1], 2, max) %>% divide_by(sc) %>% max %>% print
+apply(d_size[, -1], 2, max) / sc
+ymax <- max(apply(d_size[, -1], 2, max) / sc)
+ymax
 ```
 
-```{r colmass, echo=track, results=track, w=8, h=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens(/$10$) in texts, column sum(/$10$) in the TDM, maximum column frequency in the TDM", fig.label="fig:colmass", fig.pos="p", out.width='100.0%'}
+They can be visualized graphically as bar plots or line plots:
 
-colMassPlot(data, sc = c(1, 10, 10, 1), r = 1, textty = "text", themety = "light", size_b = 2.5, x_lab = "year")
-
+```{r colmass-plot, fig.width=8, fig.height=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens(/10) in texts, column sum(/10) in the TDM, maximum column frequency in the TDM"}
+colMassPlot(
+  data, 
+  sc = c(1, 10, 10, 1), 
+  r = 1, 
+  textty = "text", 
+  themety = "light", 
+  size_b = 2.5, 
+  x_lab = "year"
+)
 ```
-
 
 ### Temporal curves
 
-The overall frequency trajectories (curves) are shown for the original data (Figure \ref{fig:curves}) and, below, also separately for each frequency class or zone (with a sample for each class) (Figure \ref{fig:facets}).
+The overall frequency trajectories (curves) are shown for the original data and separately for each frequency class or zone (with a sample for each class).
 
 The plots are based on the long-format TDM stored in `data$tdm_long`, which has `year` as a group variable and `frequency` as the associated numerical variable.
-```{r dat_l, include=track, eval = T}
-tdm_l <- data$tdm_long 
-tdm_l %>% head; tdm_l %>% tail
+
+```{r tdm-long}
+tdm_l <- data$tdm_long
+
+datatable(
+  tdm_l,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    scrollY = "400px",
+    dom = 'frtip'
+  ),
+  caption = "Term-Document Matrix in long format"
+)
 ```
 
-```{r curves, eval=T, echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curves", fig.pos="p", out.width='100.0%'}
-
-curvePlot(data, r = 2, size_class = c(.2,.3,.4,.5))
+```{r curves-plot, fig.width=8, fig.height=5, fig.cap="Keyword trajectories (original data)"}
+curvePlot(data, r = 2, size_class = c(0.2, 0.3, 0.4, 0.5))
 ```
 
-```{r sample, message=T, include=T}
+Select sample keywords for detailed visualization:
+
+```{r sample-keywords}
+set.seed(2222)
 r <- 3
-# seed <- Sys.time()
-seed <- 2222
-set.seed(seed)
-kw <- tdm_l %>% aggregate(keyword ~ zone, ., function(x) sample(unique(x), r))
+kw <- tdm_l %>% 
+  group_by(zone) %>% 
+  summarise(keyword = list(sample(unique(keyword), r))) %>%
+  ungroup()
 kw
 ```
 
-
-```{r curvesEtctu, eval=T, dependson=c("sample"), echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curvesEtctu", fig.pos="p", out.width='100.0%'}
-
-ctu_noun <-  c("person", "object", "instruct", "incident")
-
-ctu_noun <- kw %>% pull(2) %>% as.data.frame() %>% pull(1)
+```{r curves-ctu-plot, fig.width=8, fig.height=5, fig.cap="Keyword trajectories with example keywords highlighted"}
+ctu_noun <- c("person", "object", "instruct", "incident")
 
 curveCtuPlot(data, ctu_noun = ctu_noun, r = 2, size_class = NULL)
 ```
 
-```{r example_with_frequency, eval=T, message = F}
-library(dplyr)
-tdm %>% group_by(zone) %>% arrange(desc(tot_freq)) %>% slice_head(n = 3) %>% ungroup() %>% select(zone, keyword)
+Top keywords by frequency class:
+
+```{r top-keywords}
+top_kw <- tdm %>% 
+  group_by(zone) %>% 
+  arrange(desc(tot_freq)) %>% 
+  slice_head(n = 3) %>% 
+  ungroup() %>% 
+  select(zone, keyword, tot_freq)
+
+datatable(
+  top_kw,
+  options = list(
+    pageLength = 20,
+    scrollX = TRUE,
+    dom = 't'
+  ),
+  caption = "Top 3 keywords by frequency zone"
+)
 ```
 
-
-```{r facets, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis.", fig.label="fig:facets", fig.pos="p", out.width='100.0%'}
-
-facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
-r = 4, scales = "free", leg = TRUE, size_class = NULL)
+```{r facet-plot, fig.width=7.5, fig.height=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis"}
+facetPlot(
+  data, 
+  keyword_selection = list(type = "frequency", n = 3, kw.list = NULL),
+  r = 4, 
+  scales = "free", 
+  leg = TRUE, 
+  size_class = NULL
+)
 ```
-
 
 # Normalization
 
+Different normalization strategies can be applied to the TDM:
 
-```{r normalize, include=draft}
+## Normalization by column
 
-options(digits=3)
+Subcorpus total tokens (dimCorpus):
 
-cat("\n###### normalization by column ######\n
-\n## subcorpus total #tokens (dimCorpus) ##\n")
-
-datnc <- normalization(data, normty = "nc", 1000)
-
-# datnc[,1:6] %>% head 
-# datnc[,-(1:2)] %>% max
-# # datnc[,-(1:2)] %>% apply(2,max)
-
-
-cat("\n###### normalization by row and col ######\n
-\n## chisquare-like ##\n")
-
-datnchi <- normalization(data, normty = "nchi", 1)
-
-# datnchi[,1:6] %>% head 
-# datnchi[,1:6] %>% tail 
-# datnchi[,-(1:2)] %>% max
-# # datnchi[,-(1:2)] %>% apply(2,max)
-
-cat("\n##  Max row freq and subcorpus total #tokens  ##\n\n")
-
-datnM <- normalization(data, normty = "nM", 1000)
-
-# datnM[,1:6] %>% head
-# # datnM[,-(1:2)] %>% apply(1,max)
-# # datnM[,-(1:2)] %>% apply(1,min)
-# #datnM[,-(1:2)] %>% apply(2,max)
-
-
-cat("\n## MinMax row freq and subcorpus total #tokens  ##\n")
-
-datnmM <- normalization(data, normty = "nmM", 1000)
-
-# datnmM[,1:6] %>% head 
-# # datnmM[,-(1:2)] %>% apply(1,max)
-# # datnmM[,-(1:2)] %>% apply(1,min)
-# #datnmM[,-(1:2)] %>% apply(2,max)
-# #datnmM[,-(1:2)] %>% apply(2,min)
-
-cat("\n## Non-linear row freq and subcorpus total #tokens ##\n")
-
-cat("\nNon-linear transformation:\n Difference from the minimum weights more when the distribution is positively asymmetric (p>0.5), viceversa, difference from the maximum weights more when the distribution is negatively asymmetric(p<0.5)\n")
-
-
-datnnl <- normalization(data, normty = "nnl", 1000, nnlty="M")
-# p_asy <- datnnl$p_asy
-# datnnl <- datnnl$datn
-# 
-# # # kw 379 has VL=1, p=1, then 0/0 when x=min
-# # datnnl[379,]
-# # datnnl[379,2+which(apply(datnnl[379,-(1:2)], 1, is.nan))] <- 0
-# # datnnl[379,]
-# 
-# # check any nonfinite value
-# apply(datnnl[,-(1:2)], 1, function(x){any(is.na(x))}) %>% sum
-# apply(datnnl[,-(1:2)], 1, function(x){any(is.infinite(x))}) %>% sum
-# apply(datnnl[,-(1:2)], 1, function(x){any(is.nan(x))}) %>% sum
-# 
-# datnnl[,1:6] %>% head
-# datnnl[,-(1:2)] %>% apply(1,max)
-# datnnl[,-(1:2)] %>% apply(1,min)
-# #datnmM[,-(1:2)] %>% apply(2,max)
-# #datnmM[,-(1:2)] %>% apply(2,min)
-# 
-# # cat("\nComparing MinMax to non-linear norm:\n")
-# # cbind(datnmM %>% filter(keyword%in%c("metro","prendere")) %>% t(),
-# # datnnl %>% filter(keyword%in%c("metro","prendere")) %>% t())[c(1:5, (n_d-4):n_d),]
-
+```{r norm-nc}
+datnc <- normalization(data, normty = "nc", sc = 1000)
 ```
 
-```{r}
+## Normalization by row and column
+
+Chi-square-like normalization:
+
+```{r norm-nchi}
+datnchi <- normalization(data, normty = "nchi", sc = 1)
+```
+
+Max row frequency and subcorpus total tokens:
+
+```{r norm-nM}
+datnM <- normalization(data, normty = "nM", sc = 1000)
+```
+
+MinMax row frequency and subcorpus total tokens:
+
+```{r norm-nmM}
+datnmM <- normalization(data, normty = "nmM", sc = 1000)
+```
+
+## Non-linear normalization
+
+Non-linear transformation: Difference from the minimum weights more when the distribution is positively asymmetric (p>0.5), vice versa, difference from the maximum weights more when the distribution is negatively asymmetric (p<0.5).
+
+```{r norm-nnl}
+datnnl <- normalization(data, normty = "nnl", sc = 1000, nnlty = "M")
+```
+
+Check normalization results:
+
+```{r norm-results}
 names(datnc)
-datnc$norm; datnc$normty
-datnc$tdm %>% head
-datnc$tdm_long %>% head
+datnc$norm
+datnc$normty
+
+datatable(
+  head(datnc$tdm, 20),
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Normalized TDM (first 20 rows)"
+)
+
+datatable(
+  head(datnc$tdm_long, 50),
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Normalized TDM in long format (first 50 rows)"
+)
 ```
 
+Asymmetry analysis for non-linear normalization:
 
-```{r asy_eda, eval=T}
-options(digits=3)
-
+```{r asymmetry}
 names(datnnl)
-temp <- datnnl$tdm[,c(1,4)] %>% cbind(datnnl$p_asy)
-# table(temp$zone, datnnl$p_asy>.5)
-# # temp %>% filter(p_asy<.5)
-# temp %>%
-#   group_by(zone) %>%
-#   summarise(min=min(p_asy), p25=quantile(p_asy,.25),me=median(p_asy),p75=quantile(p_asy,.75),max=max(p_asy), mean=mean(p_asy))
+temp <- datnnl$tdm[, c(1, 4)] %>% cbind(datnnl$p_asy)
 
+datatable(
+  head(temp, 20),
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE,
+    dom = 'frtip'
+  ),
+  caption = "Asymmetry coefficients (first 20 rows)"
+)
 ```
 
+<!-- # Session Information -->
+
+<!-- ```{r session-info} -->
+<!-- sessionInfo() -->
+<!-- ``` -->
 

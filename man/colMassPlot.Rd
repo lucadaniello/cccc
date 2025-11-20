@@ -11,55 +11,74 @@ colMassPlot(
   textty = "text",
   themety = "light",
   size_b = 2.5,
-  x_lab = "years"
+  x_lab = "year"
 )
 }
 \arguments{
-\item{data}{A list contained the output of \code{importData()}}
+\item{data}{A list object returned by \code{importData()}, containing:
+\itemize{
+\item \code{corpus_info}: a tibble with columns \code{years}, \code{nDoc}, and \code{dimCorpus}
+\item \code{tdm}: a term-document matrix used to compute \code{Csum} and \code{Mcf}
+}}
 
-\item{sc}{Numeric vector of length 4. Scaling factors for:
-\code{nDoc}, \code{dimCorpus}, \code{Csum}, \code{Mcf}. Default: \code{c(1, 10, 10, 1)}.}
+\item{sc}{Numeric vector of length 4. Scaling factors for \code{nDoc}, \code{dimCorpus},
+\code{Csum}, and \code{Mcf}, respectively. Default: \code{c(1, 10, 10, 1)}.}
 
-\item{r}{Integer. Interval for thinning x-axis labels (default = 1 = show all).}
+\item{r}{Integer. Interval for thinning x-axis year labels. If \code{r = 3}, only every
+third year is labeled. Default: \code{1} (show all years).}
 
-\item{textty}{Character. Unit of analysis for legend (e.g. "text", "place", "paper").}
+\item{textty}{Character. Unit of analysis used in legend labels (e.g., "text", "article",
+"abstract"). Default: \code{"text"}.}
 
-\item{themety}{Character. Either \code{"light"} (default) or \code{"dark"}.}
+\item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
 
-\item{size_b}{Numeric. Base size for bar lines (default = 2.5).}
+\item{size_b}{Numeric. Base line width multiplier for the bars. Default: \code{2.5}.}
 
-\item{x_lab}{Character. X-axis label (default = "year").}
+\item{x_lab}{Character. Label for the x-axis. Default: \code{"year"}.}
 }
 \value{
-A \code{ggplot2} object representing temporal trends in corpus structure.
+A \code{ggplot2} object showing the temporal evolution of corpus dimensions.
+The y-axis represents rescaled corpus size, and the x-axis shows time points (years).
+A horizontal legend at the bottom identifies each metric.
 }
 \description{
-This function creates a multi-line plot of four corpus metrics over time:
+This function creates a multi-layered visualization showing four corpus metrics over time,
+displayed as vertical bars (using \code{geom_linerange}). The four metrics are:
 \itemize{
-\item number of documents (\code{nDoc})
-\item number of tokens (\code{dimCorpus})
-\item sum of keyword frequencies (\code{Csum})
-\item maximum keyword frequency (\code{Mcf}).
+\item Number of documents (\code{nDoc}): shown as a thin line with points
+\item Number of word-tokens (\code{dimCorpus}): widest bar
+\item Sum of keyword frequencies in the TDM (\code{Csum}): medium-width bar
+\item Maximum keyword frequency per year (\code{Mcf}): narrow bar
 }
 }
 \details{
-All measures are rescaled by user-defined factors to improve visual comparability.
+All metrics are rescaled by user-defined factors (\code{sc}) to ensure visual comparability.
+For example, if \code{sc = c(1, 10, 10, 1)}, then \code{dimCorpus} and \code{Csum} are
+divided by 10 before plotting.
+
+The function computes \code{Csum} (column-wise sum of keyword frequencies) and
+\code{Mcf} (column-wise maximum frequency) directly from the TDM. The bars are layered
+from widest to narrowest for visual clarity, with \code{nDoc} shown as a dot-and-line
+overlay.
 }
 \examples{
 \dontrun{
 tdm <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
-sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+  sep_tdm = ";", sep_corpus_info = ";", zone = "stat")
 
+# Basic usage
+colMassPlot(data)
+
+# Custom scaling and labeling
 colMassPlot(data,
-sc = c(1, 10, 10, 1),
-r = 1,
-textty = "text",
-themety = "light",
-size_b = 2.5,
-x_lab = "years"
+  sc = c(1, 50, 50, 1),
+  r = 2,
+  textty = "article",
+  themety = "dark",
+  size_b = 2,
+  x_lab = "Year"
 )
-
 }
 }

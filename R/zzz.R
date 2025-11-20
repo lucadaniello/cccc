@@ -3,7 +3,8 @@ utils::globalVariables(c(
   "gcv", "gcv_min", "int_freq", "keyword", "kw_color", "label", "lambda",
   "median", "metric", "nDoc", "ocv", "ocv_min", "penalty", "quantile",
   "reorder", "sd", "setNames", "smooth", "sse", "time", "tot_freq", "value",
-  "year", "years", "zone", "zone_color", "zone_label","cluster_num", "letter", "Freq", "color", "perc", "cluster"
+  "year", "years", "zone", "zone_color", "zone_label", "cluster_num", "letter",
+  "Freq", "color", "perc", "cluster", "cont", "available", "selected", "rank"
 ))
 
 #' @import ggplot2
@@ -12,8 +13,8 @@ utils::globalVariables(c(
 #' @import readxl
 #' @import stringr
 #' @import ggnewscale
-#' @import stringr
 #' @import tidyr
+#' @import purrr
 #' @importFrom stats cor
 #'
 .onAttach<-function(...){
@@ -41,23 +42,39 @@ read_data <- function(path, sep) {
 
 
 
-## from tdm to long format
-tdm2long <- function(data){
+## Convert TDM from wide format to long format
+tdm2long <- function(data) {
   ind_d <- data$year_cols
   n_d <- length(ind_d)
   n <- nrow(data$tdm)
-  year <- data$tdm %>% names %>% .[ind_d] %>% as.numeric
-  chrono <- 1+year-year[1]
 
+  # Extract year names and convert to numeric
+  year_names <- names(data$tdm)[ind_d]
+  year <- suppressWarnings(as.numeric(year_names))
+
+  # Check if year conversion was successful
+  if (any(is.na(year))) {
+    stop("Year column names must be numeric or convertible to numeric (e.g., '1965', '1966', ...)")
+  }
+
+  # Create chronological index starting from 1
+  chrono <- 1 + year - year[1]
+
+  # Convert to long format
   data$tdm_long <- data$tdm %>%
     pivot_longer(
-      cols = (min(ind_d)):ncol(.),  # columns to pivot
+      cols = all_of(ind_d),  # Use all_of() for robust selection
       names_to = "year",
       values_to = "freq"
-    ) %>% arrange(year, desc(tot_freq)) %>%
-    mutate(cont=rep(1:n_d,rep(n,n_d)),
-           chrono=rep(chrono,rep(n,n_d))) %>%
-    select("keyword", "year", "cont", "chrono", "freq","tot_freq", "int_freq","zone")
+    ) %>%
+    arrange(year, desc(tot_freq)) %>%
+    mutate(
+      cont = rep(1:n_d, each = n),      # Contiguous time index
+      chrono = rep(chrono, each = n),   # Chronological index from 1
+      year = as.numeric(year)           # Ensure year is numeric
+    ) %>%
+    select(keyword, year, cont, chrono, freq, tot_freq, int_freq, zone)
+
   return(data)
 }
 

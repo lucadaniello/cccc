@@ -51,20 +51,25 @@ It contains the following columns:
 plus one column per year representing term frequency in that year.}
 \item{corpus_info}{A tibble with corpus-level yearly metadata.
 It includes the columns:
-\code{year} (observation year),
+\code{years} (observation year),
 \code{dimCorpus} (total number of tokens),
 \code{nDoc} (number of documents),
 and optionally \code{metadata} (additional information).}
+\item{tdm_long}{A tibble in long format containing the following columns:
+\code{keyword}, \code{year}, \code{cont} (contiguous time index),
+\code{chrono} (chronological index starting from 1), \code{freq} (keyword frequency),
+\code{tot_freq}, \code{int_freq}, and \code{zone}.}
 \item{norm}{Logical. Indicates whether the term-document matrix has been normalized (default is \code{FALSE}).}
 \item{year_cols}{Numeric vector indicating which columns in the TDM refer to yearly frequencies.}
-\item{zone}{Character vector of unique frequency zones used.}
-\item{freq_int}{Character vector of unique frequency intervals used.}
-\item{colors}{Character vector of default colors associated with zones.}
+\item{zone}{Character vector of unique frequency zones used (ordered from highest to lowest frequency).}
+\item{int_freq}{Character vector of unique frequency intervals in the format \code{"[min-max]"} for each zone.}
+\item{colors_light}{Character vector of light color palette for zones (for plotting with light themes).}
+\item{colors_dark}{Character vector of dark color palette for zones (for plotting with dark themes).}
 }
 }
 \description{
 This function reads and processes a Term Document Matrix (TDM) and corpus information from CSV or Excel files.
-It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword,
+It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword (by which it reorders the TDM),
 and classifies terms into frequency zones. It also creates a column representing
 the frequency interval associated with each zone.
 }

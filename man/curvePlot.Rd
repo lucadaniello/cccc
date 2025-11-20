@@ -2,43 +2,64 @@
 % Please edit documentation in R/curvePlot.R
 \name{curvePlot}
 \alias{curvePlot}
-\title{Plot Temporal Curves of Keyword Frequencies}
+\title{Plot Temporal Trajectories/Curves of Keyword Frequencies}
 \usage{
-curvePlot(
-  data,
-  r = 1,
-  themety = "light",
-  size_class = NULL,
-  x_leg = 0.85,
-  x_lab = "years"
-)
+curvePlot(data, r = 1, themety = "light", size_class = NULL, x_lab = "year")
 }
 \arguments{
-\item{data}{A list containing the output of \code{importData()}}
+\item{data}{A list object returned by \code{importData()}, containing:
+\itemize{
+\item \code{tdm_long}: a tibble in long format with columns \code{keyword},
+\code{year}, \code{chrono}, \code{freq}, \code{zone}, and \code{int_freq}
+\item \code{year_cols}: numeric indices of year columns in the original TDM
+\item \code{colors_light} and \code{colors_dark}: color palettes for zones
+\item \code{norm}: logical indicating if data is normalized
+}}
 
-\item{r}{Scalar. Interval for thinning x-axis year labels (default = 1).}
+\item{r}{Integer. Interval for thinning x-axis year labels. If \code{r = 3},
+only every third year is labeled. Default: \code{1} (show all years).}
 
-\item{themety}{Character. Theme type: "light" (default) or "dark".}
+\item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
 
-\item{size_class}{Numeric vector for line sizes by class (default is context-dependent).}
+\item{size_class}{Numeric vector specifying line widths for each frequency zone.
+If \code{NULL}, defaults are set based on theme and number of zones.}
 
-\item{x_leg}{Numeric. x-position of legend (default = 0.85).}
-
-\item{x_lab}{Character. Label for x-axis (default = "year").}
+\item{x_lab}{Character. Label for the x-axis. Default: \code{"year"}.}
+}
+\value{
+A \code{ggplot2} object showing keyword frequency trajectories over time,
+colored and sized by frequency zone. A horizontal legend at the bottom displays
+zone labels with their frequency intervals.
 }
 \description{
 This function generates a temporal plot of keyword frequencies (normalized or raw)
-from a TDM in long format. It allows visualizing curves grouped by frequency zone,
-with thematic customization options.
+from a TDM in long format. Each keyword's trajectory over time is displayed as a line,
+with color and line width mapped to its frequency zone. The plot supports both
+light and dark themes and allows customization of axis labels and line sizes.
+}
+\details{
+The function uses the \code{chrono} variable (a continuous time index starting from 1)
+for the x-axis, while displaying actual year labels. This ensures correct spacing
+even if years are not consecutive in the data.
+
+Line widths are mapped to frequency zones using \code{scale_linewidth_manual()},
+with higher-frequency zones typically shown with thicker lines.
 }
 \examples{
-\donttest{
+\dontrun{
 tdm <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
-sep_tdm = ";",sep_corpus_info = ";",zone="stat")
+  sep_tdm = ";", sep_corpus_info = ";", zone = "stat")
 
+# Basic usage
 curvePlot(data)
+
+# Custom theme and label thinning
+curvePlot(data, r = 2, themety = "dark")
+
+# Manual line width specification
+curvePlot(data, size_class = c(0.3, 0.4, 0.5, 0.6))
 }
 
 }
