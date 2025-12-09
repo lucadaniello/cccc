@@ -17,8 +17,16 @@
 #'   only every third year is labeled. Default: \code{1} (show all years).
 #' @param themety Character. Plot theme: \code{"light"} (default) or \code{"dark"}.
 #' @param size_class Numeric vector specifying line widths for each frequency zone.
-#'   If \code{NULL}, defaults are set based on theme and number of zones.
+#'   If \code{NULL}, defaults are set based on theme and number of zones:
+#'   \itemize{
+#'     \item light theme: c(0.1, 0.2, 0.35, 0.35)
+#'     \item dark theme: c(0.35, 0.5, 0.5, 0.5)
+#'   }
+#'   The vector is automatically truncated to match the number of zones.
 #' @param x_lab Character. Label for the x-axis. Default: \code{"year"}.
+#' @param y_lab Character. Label for the y-axis. Default: automatically set based on
+#'   \code{data$norm} (\code{"keyword (normalized) frequency"} if normalized,
+#'   \code{"keyword frequency"} otherwise). Can be customized by the user.
 #'
 #' @return A \code{ggplot2} object showing keyword frequency trajectories over time,
 #'   colored and sized by frequency zone. A horizontal legend at the bottom displays
@@ -30,7 +38,8 @@
 #' even if years are not consecutive in the data.
 #'
 #' Line widths are mapped to frequency zones using \code{scale_linewidth_manual()},
-#' with higher-frequency zones typically shown with thicker lines.
+#' with higher-frequency zones typically shown with thicker lines (but this can be
+#' customized with the \code{size_class} parameter).
 #'
 #' @export
 #'
@@ -47,6 +56,9 @@
 #' # Custom theme and label thinning
 #' curvePlot(data, r = 2, themety = "dark")
 #'
+#' # Custom y-axis label
+#' curvePlot(data, y_lab = "Normalized frequency (per 1000 tokens)")
+#'
 #' # Manual line width specification
 #' curvePlot(data, size_class = c(0.3, 0.4, 0.5, 0.6))
 #' }
@@ -55,36 +67,53 @@ curvePlot <- function(data,
                       r = 1,
                       themety = "light",
                       size_class = NULL,
-                      x_lab = "year") {
+                      x_lab = "year",
+                      y_lab = NULL) {
 
   # Input validation
   if (!"tdm_long" %in% names(data)) {
     stop("Input data must contain 'tdm_long'. Run importData() first.")
   }
 
-  norm <- data$norm
-  y_lab <- ifelse(norm, "keyword (normalized) frequency", "keyword frequency")
+  # Set default y_lab if not provided
+  if (is.null(y_lab)) {
+    y_lab <- ifelse(data$norm, "keyword (normalized) frequency", "keyword frequency")
+  }
+
   col_leg <- ifelse(themety == "light", "black", "white")
 
   dat_l <- data$tdm_long
   year_cols <- data$year_cols
 
+  # Get zone information from data object (more efficient)
+  zone_levels <- levels(data$zone)
+  n_zones <- length(zone_levels)
+
   # Ensure zone is a factor with correct levels
   dat_l <- dat_l %>%
-    mutate(zone = factor(zone, levels = unique(zone)))
-
-  zone_levels <- levels(dat_l$zone)
-  n_zones <- length(zone_levels)
+    mutate(zone = factor(zone, levels = zone_levels))
 
   # Set theme-specific defaults
   if (themety == "light") {
     base_theme <- theme_classic()
     col_class <- setNames(data$colors_light, zone_levels)
-    if (is.null(size_class)) size_class <- seq(0.25, 0.55, length.out = n_zones)
+    if (is.null(size_class)) {
+      size_class <- c(0.1, 0.2, 0.35, 0.35)[1:n_zones]
+    }
   } else {
     base_theme <- theme_dark()
     col_class <- setNames(data$colors_dark, zone_levels)
-    if (is.null(size_class)) size_class <- seq(0.4, 0.7, length.out = n_zones)
+    if (is.null(size_class)) {
+      size_class <- c(0.35, 0.5, 0.5, 0.5)[1:n_zones]
+    }
+  }
+
+  # Validate size_class length
+  if (length(size_class) != n_zones) {
+    warning(paste0("'size_class' has length ", length(size_class),
+                   " but there are ", n_zones, " zones. Using first ",
+                   n_zones, " values or recycling."))
+    size_class <- rep_len(size_class, n_zones)
   }
 
   # Prepare x-axis labels
@@ -100,7 +129,7 @@ curvePlot <- function(data,
     transmute(label = paste(zone, int_freq)) %>%
     pull(label)
 
-  # Theme customization
+  # Theme customization (fixed negative margins)
   opts <- base_theme +
     theme(
       plot.margin = unit(c(0.1, 0.1, 0.3, 0.1), "lines"),
@@ -110,7 +139,7 @@ curvePlot <- function(data,
       axis.ticks.length = unit(0.1, "cm"),
       legend.position = "bottom",
       legend.box = "horizontal",
-      legend.margin = margin(t = 2, b = 0),
+      legend.margin = margin(t = 2, b = 0),  # Fixed: non-negative margins
       legend.background = element_rect(fill = NA),
       legend.key = element_rect(colour = NA, fill = NA),
       legend.text = element_text(color = col_leg, face = "bold", size = rel(0.95)),
@@ -128,13 +157,13 @@ curvePlot <- function(data,
       values = col_class,
       breaks = zone_levels,
       labels = zone_labels,
-      guide = guide_legend(order = 1, override.aes = list(linewidth = 2))
+      guide = guide_legend(order = 1, override.aes = list(linewidth = 2))  # Fixed: linewidth instead of size
     ) +
-    scale_linewidth_manual(
+    scale_linewidth_manual(  # Fixed: use scale_linewidth_manual instead of scale_discrete_manual
       values = setNames(size_class, zone_levels),
       guide = "none"
     ) +
-    labs(x = x_lab, y = y_lab) +
+    labs(x = x_lab, y = y_lab) +  # More concise way to set labels
     opts
 
   return(p)

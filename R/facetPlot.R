@@ -42,7 +42,10 @@
 #' @param themety Character. Plot theme: \code{"light"} (default) or \code{"dark"}.
 #' @param size_class Numeric vector specifying line widths for background zone lines.
 #'   Length must match number of zones. If \code{NULL}, defaults to 0.1 for all zones.
+#' @param size_kw Numeric. Line width for highlighted keywords. Default: 0.7.
 #' @param x_lab Character. Label for x-axis. Default: \code{"year"}.
+#' @param y_lab Character. Label for y-axis. If \code{NULL} (default), uses
+#'   "keyword frequency" or "keyword (normalized) frequency" based on \code{data$norm}.
 #'
 #' @return A \code{ggplot} object with faceted panels (one per zone) showing keyword
 #'   frequency trajectories. Background lines show all keywords in each zone with
@@ -91,6 +94,9 @@
 #' )
 #' }
 #'
+#' @export
+
+
 facetPlot <- function(data,
                       keyword_selection = list(type = "frequency", n = 3, kw.list = NULL),
                       r = 4,
@@ -98,7 +104,9 @@ facetPlot <- function(data,
                       leg = TRUE,
                       themety = "light",
                       size_class = NULL,
-                      x_lab = "year") {
+                      size_kw = NULL,
+                      x_lab = "year",
+                      y_lab = NULL) {
 
   # Input validation
   valid_types <- c("frequency", "random", "list")
@@ -116,26 +124,40 @@ facetPlot <- function(data,
   }
 
   # Extract data
-  y_lab <- ifelse(data$norm, "keyword (normalized) frequency", "keyword frequency")
-  zone_levels <- levels(data$zone)
+  if (is.null(y_lab)) {
+    y_lab <- ifelse(data$norm, "keyword (normalized) frequency", "keyword frequency")
+  }
+
+  zone_levels <- data$zone
   n_zones <- length(zone_levels)
   m <- keyword_selection$n
-  d <- data$tdm_long
 
-  # Set theme and colors
+  # Set theme-specific defaults
   if (themety == "light") {
     col_class <- setNames(data$colors_light, zone_levels)
-    base_theme <- theme_classic()
+    if (is.null(size_class)) size_class <- rep(0.1, n_zones)
   } else {
     col_class <- setNames(data$colors_dark, zone_levels)
-    base_theme <- theme_dark()
+    if (is.null(size_class)) size_class <- rep(0.2, n_zones)
   }
-  col_class <- paste0(col_class, "70")  # Add transparency
 
-  # Generate distinct colors for highlighted keywords
-  col_kw <- colorlist(type = themety)[n_zones + seq_len(max(m * n_zones, 20))]
+  # Validate size_class length
+  if (length(size_class) != n_zones) {
+    warning(paste0("'size_class' length (", length(size_class),
+                   ") doesn't match number of zones (", n_zones, "). ",
+                   "Recycling or truncating values."))
+    size_class <- rep_len(size_class, n_zones)
+  }
 
-  # Select keywords based on type
+  # Set size_kw default
+  if (is.null(size_kw)) size_kw <- 0.7
+
+  col_class <- paste0(col_class, "70")  # Add transparency for background zones
+
+  # Generate distinct colors for highlighted keywords (avoid zone colors)
+  col_kw <- colorlist(type = themety)[(n_zones + 1):(n_zones + 20)]
+
+  d <- data$tdm_long
   type <- keyword_selection$type
 
   switch(
@@ -150,7 +172,7 @@ facetPlot <- function(data,
 
       kw <- kw_by_zone %>%
         mutate(
-          selected = map(available, ~{
+          selected = map(available, ~ {
             n_take <- min(m, length(.x))
             sample(.x, n_take)
           })
@@ -219,31 +241,24 @@ facetPlot <- function(data,
   kw_colors <- setNames(unique(kw_df$kw_color), unique(kw_df$keyword))
   all_colors <- c(zone_colors, kw_colors)
 
-  # Set line widths
-  if (is.null(size_class)) {
-    bg_linewidth <- 0.1  # Background lines
-  } else {
-    if (length(size_class) != n_zones) {
-      warning("'size_class' length doesn't match number of zones. Using default.")
-      bg_linewidth <- 0.1
-    } else {
-      bg_linewidth <- mean(size_class)  # Average for simplicity
-    }
-  }
+  # Set base theme
+  base_theme <- if (themety == "light") theme_classic() else theme_dark()
 
   # Theme options
   opts <- base_theme +
     theme(
-      plot.margin = unit(c(0.1, 0.1, 0.3, 0.1), "lines"),
+      plot.margin = unit(c(0.1, 0.1, 0.5, 0.1), "lines"),  # More bottom margin for 2 legends
       axis.text = element_text(angle = 90, size = rel(0.9)),
       axis.text.x = element_text(vjust = 0.5),
       axis.text.y = element_text(hjust = 0.5),
       legend.position = if (leg) "bottom" else "none",
+      legend.box = "vertical",  # Stack legends vertically
+      legend.box.spacing = unit(0.2, "cm"),  # Space between the two legends
       legend.key = element_rect(colour = NA, fill = NA),
-      legend.key.width = unit(2, "lines"),
-      legend.key.height = unit(0.5, "lines"),
-      legend.text = element_text(size = rel(0.85)),
-      legend.box.spacing = unit(0, "cm"),
+      legend.key.width = unit(1.5, "lines"),
+      legend.key.height = unit(0.4, "lines"),
+      legend.text = element_text(size = rel(0.80)),
+      legend.title = element_text(size = rel(0.85), face = "bold"),
       panel.grid = element_blank()
     )
 
@@ -258,19 +273,44 @@ facetPlot <- function(data,
   if (scales == "fixed") {
     p <- p +
       facet_wrap(~zone, nrow = 2) +
-      geom_line(aes(colour = zone), linewidth = bg_linewidth) +
-      geom_line(data = kw_df, aes(colour = keyword), linewidth = 0.5) +
-      scale_color_manual(values = all_colors)
+      # Layer 1: Background zone lines (WITH legend, order=1)
+      geom_line(aes(colour = zone, linewidth = zone)) +
+      scale_colour_manual(
+        name = "Frequency Zone",
+        values = zone_colors,
+        guide = guide_legend(order = 1, override.aes = list(linewidth = 1.5, alpha = 1))
+      ) +
+      scale_linewidth_manual(values = setNames(size_class, zone_levels), guide = "none") +
+      # Reset color scale for keywords
+      ggnewscale::new_scale_colour() +
+      # Layer 2: Foreground keyword lines (with legend, order=2)
+      geom_line(data = kw_df, aes(colour = keyword), linewidth = size_kw) +
+      scale_colour_manual(
+        name = "Selected Keywords",
+        values = kw_colors,
+        guide = guide_legend(order = 2, override.aes = list(linewidth = 1.2))
+      )
   } else {
     p <- p +
       facet_wrap(~zone, nrow = 2, scales = "free_y") +
-      geom_line(aes(colour = zone), linewidth = bg_linewidth) +
-      geom_line(data = kw_df, aes(colour = keyword), linewidth = 0.5) +
-      scale_color_manual(values = all_colors)
+      # Layer 1: Background zone lines (WITH legend, order=1)
+      geom_line(aes(colour = zone, linewidth = zone)) +
+      scale_colour_manual(
+        name = "Frequency Zone",
+        values = zone_colors,
+        guide = guide_legend(order = 1, override.aes = list(linewidth = 1.5, alpha = 1))
+      ) +
+      scale_linewidth_manual(values = setNames(size_class, zone_levels), guide = "none") +
+      # Reset color scale for keywords
+      ggnewscale::new_scale_colour() +
+      # Layer 2: Foreground keyword lines (with legend, order=2)
+      geom_line(data = kw_df, aes(colour = keyword), linewidth = size_kw) +
+      scale_colour_manual(
+        name = "Selected Keywords",
+        values = kw_colors,
+        guide = guide_legend(order = 2, override.aes = list(linewidth = 1.2))
+      )
   }
 
   return(p)
 }
-
-
-

@@ -17,7 +17,7 @@ utils::globalVariables(c(
 #' @import purrr
 #' @importFrom stats cor
 #'
-.onAttach<-function(...){
+.onAttach <- function(...) {
   packageStartupMessage("cccc package")
 }
 
@@ -80,7 +80,7 @@ tdm2long <- function(data) {
 
 # panel plot for smoothing selection
 make_summary_panel <- function(summary_opt, penalty_type, normty) {
-  # Ristruttura in long format
+  # Restructure to long format
   df_long <- summary_opt %>%
     pivot_longer(cols = c(df_gcv, sse, gcv_min, ocv_min),
                  names_to = "metric", values_to = "value") %>%
@@ -112,7 +112,8 @@ make_summary_panel <- function(summary_opt, penalty_type, normty) {
   return(p)
 }
 
-#make_temparray auxiliary function that converts the summary_optimal (or results) of smoothingSelection() into a compatible 3D array
+# make_temparray auxiliary function that converts the summary_optimal (or results)
+# of smoothingSelection() into a compatible 3D array
 
 make_temparray <- function(summary_opt, stats = c("df", "sse", "ocv", "gcv")) {
   ord <- summary_opt$degree
@@ -128,10 +129,11 @@ make_temparray <- function(summary_opt, stats = c("df", "sse", "ocv", "gcv")) {
 
 
 
-#Reconstruct Smoothed Functional Data Object
+# Reconstruct Smoothed Functional Data Object
 # Compute the optimal smoothing spline fit for keyword frequency curves
-# data A list returned by importData
-# opt_results A list returned by optimalSmoothing(resSmoothing) where resSmoothing is a list with all smoothingSeleciton penalty tyope outputs
+# data: A list returned by importData
+# opt_result: A list returned by optimalSmoothing(resSmoothing) where resSmoothing
+#             is a list with all smoothingSelection penalty type outputs
 
 getWsmooth <- function(data, opt_result) {
   # Step 1: Extract the term-document matrix as a numeric matrix of keyword frequencies over time
@@ -184,8 +186,6 @@ getWsmooth <- function(data, opt_result) {
   return(smoothed)
 }
 
-# zzz.R
-
 #' Get Optimization Rules for Clustering Validation Criteria
 #'
 #' Internal function that returns the set of optimization rules for each criterion.
@@ -231,7 +231,7 @@ get_opt_civ <- function() {
     Ray_Turi = "min",
     Scott_Symons = "min",
     SD = "min",
-   #S_Dbw = "min", function used to perform needs to be find
+    # S_Dbw = "min", function used to perform needs to be found
     Silhouette = "max",
     Tau = "max",
     Trace_W = "maxd2",
@@ -281,33 +281,24 @@ computeCriterion <- function(data, clustering, criterion) {
 }
 
 
-# colorlist <- function(){
-#   c("#BA55D3","#00BFFF","#A2CD5A","#DAA520", # for zone
-#     "#DC143C", "#FF4500","#BC80BD","#BEBADA", # for keywords
-#     "#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00","#A65628","#F781BF","#999999","#66C2A5","#FC8D62","#8DA0CB","#E78AC3","#A6D854","#FFD92F"
-#     ,"#B3B3B3","#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#B15928","#8DD3C7","#BEBADA"
-#     ,"#FB8072","#80B1D3","#FDB462","#B3DE69","#D9D9D9","#BC80BD","#CCEBC5")
-# }
-
-colorlist <- function(type="light"){
-  if (type=="light"){
-    c("#828282", "#8470FF","#00C5CD", "#54FF9F" ,# for zone
-      "#EE2C2C","#FFA500","#FF00FF","#1F78B4", # for keywords
-      "#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00","#A65628","#F781BF","#999999","#66C2A5","#FC8D62","#8DA0CB","#E78AC3","#A6D854","#FFD92F"
-      ,"#B3B3B3","#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#B15928","#8DD3C7","#BEBADA"
-      ,"#FB8072","#80B1D3","#FDB462","#B3DE69","#D9D9D9","#BC80BD","#CCEBC5")
+colorlist <- function(type = "light") {
+  if (type == "light") {
+    c("#828282", "#8470FF", "#00C5CD", "#54FF9F", # for zone
+      "#EE2C2C", "#FFA500", "#FF00FF", "#1F78B4", # for keywords
+      "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999", "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F",
+      "#B3B3B3", "#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA",
+      "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#D9D9D9", "#BC80BD", "#CCEBC5")
   } else {
     c("#FFFFE0",  # lightyellow
-    "#C1FFC1",  # darkseagreen1
-    "#E9967A",  # darksalmon
-    "#8B6969",  # rosybrown4
-    "#00C5CD",  # turquoise3
-    "#54FF9F",  # seagreen1
-    "#8470FF",   # lightslateblue
-    "#BEBADA", # for keywords
-      "#E41A1C","#377EB8","#4DAF4A","#984EA3","#FF7F00","#A65628","#F781BF","#999999","#66C2A5","#FC8D62","#8DA0CB","#E78AC3","#A6D854","#FFD92F"
-      ,"#B3B3B3","#A6CEE3","#1F78B4","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A","#B15928","#8DD3C7","#BEBADA"
-      ,"#FB8072","#80B1D3","#FDB462","#B3DE69","#D9D9D9","#BC80BD","#CCEBC5")
+      "#C1FFC1",  # darkseagreen1
+      "#E9967A",  # darksalmon
+      "#8B6969",  # rosybrown4
+      "#00C5CD",  # turquoise3
+      "#54FF9F",  # seagreen1
+      "#8470FF",  # lightslateblue
+      "#BEBADA", # for keywords
+      "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999", "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F",
+      "#B3B3B3", "#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA",
+      "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#D9D9D9", "#BC80BD", "#CCEBC5")
   }
-
 }

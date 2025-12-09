@@ -18,9 +18,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 RoxygenNote: 7.3.3
-Depends:
-    R (>= 4.0.0)
-Imports:
+Depends: 
+    R (>= 4.1.0)
+Imports: 
     dplyr (>= 1.0.0),
     ggplot2 (>= 3.3.0),
     tidyr (>= 1.1.0),
@@ -43,6 +43,8 @@ Suggests:
     DT (>= 0.20),
     Cairo (>= 1.5-12),
     testthat (>= 3.0.0),
-    clusterSim (>= 0.49)
+    clusterSim (>= 0.49),
+    magrittr (>= 2.0.0),
+    ggpubr (>= 0.4.0)
 VignetteBuilder: knitr
 

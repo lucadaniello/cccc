@@ -10,7 +10,9 @@ curveCtuPlot(
   r = 1,
   themety = "light",
   size_class = NULL,
-  x_lab = "year"
+  size_example = NULL,
+  x_lab = "year",
+  y_lab = NULL
 )
 }
 \arguments{
@@ -33,10 +35,21 @@ only every second year is labeled. Default: \code{1} (show all years).}
 \item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
 
 \item{size_class}{Numeric vector specifying line widths for each frequency zone.
+Must have length equal to the number of zones. If \code{NULL}, defaults to:
+\itemize{
+\item light theme: c(0.2, 0.3, 0.35, 0.35)
+\item dark theme: c(0.35, 0.5, 0.5, 0.5)
+}}
+
+\item{size_example}{Numeric vector specifying line widths for each example keyword.
 Must have length equal to the number of zones. If \code{NULL}, defaults to
-\code{rep(0.3, n_zones)} for light theme or \code{rep(0.5, n_zones)} for dark theme.}
+c(1.15, 1.05, 0.95, 0.75), creating a visual hierarchy.}
 
 \item{x_lab}{Character. Label for the x-axis. Default: \code{"year"}.}
+
+\item{y_lab}{Character. Label for the y-axis. Default: automatically set based on
+\code{data$norm} (\code{"keyword (normalized) frequency"} if normalized,
+\code{"keyword frequency"} otherwise). Can be customized by the user.}
 }
 \value{
 A \code{ggplot} object with two legends:
@@ -57,9 +70,9 @@ with two distinct visual layers:
 The plot uses \code{ggnewscale::new_scale_colour()} to apply two separate color scales,
 allowing both zone colors and example keyword colors to coexist in the same plot.
 
-Zone lines are displayed with 70\\% transparency (alpha = "70") to create a subtle
-background layer, while example keywords are drawn with full opacity and thicker
-lines (linewidth = 0.8) for emphasis.
+Zone lines are displayed with 80\\% opacity (alpha = "80") to create a subtle
+background layer, while example keywords are drawn with full opacity and variable
+line widths (controlled by \code{size_example}) for emphasis.
 
 The function validates that:
 \itemize{
@@ -81,11 +94,23 @@ curveCtuPlot(data,
   themety = "light"
 )
 
+# With custom line widths for examples
+curveCtuPlot(data,
+  ctu_noun = c("person", "object", "instruct", "incident"),
+  size_example = c(1.5, 1.2, 1.0, 0.8)
+)
+
 # With linguistic zones (3 zones)
 data_ling <- importData(tdm_file = tdm, corpus_file = corpus, zone = "ling")
 curveCtuPlot(data_ling,
   ctu_noun = c("frequent_word", "medium_word", "rare_word"),
   r = 1
+)
+
+# Custom y-axis label
+curveCtuPlot(data,
+  ctu_noun = c("person", "object", "instruct", "incident"),
+  y_lab = "Normalized frequency (per 1000 tokens)"
 )
 }
 

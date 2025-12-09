@@ -71,25 +71,25 @@ head(data_nc$tdm, n=10)
 
 ```{r}
 ## chi-square type normalization
-data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+data_nchi <- normalization(data, normty = "nchi")
 head(data_nchi$tdm, n=10)
 ```
 
 ```{r}
 ## max per row
-data_nM <- normalization(data, normty = "nM", sc = 1000)
+data_nM <- normalization(data, normty = "nM")
 head(data_nM$tdm, n=10)
 ```
 
 ```{r}
 ## min-max per row
-data_nmM <- normalization(data, normty = "nmM", sc = 1000)
+data_nmM <- normalization(data, normty = "nmM")
 head(data_nmM$tdm, n=10)
 ```
 
 ```{r}
 ## nonlinear normalization (based on asymmetry)
-data_nnl <- normalization(data, normty = "nnl", sc = 1000, nnlty="CT")
+data_nnl <- normalization(data, normty = "nnl", nnlty="V")
 head(data_nnl$p_asy, n=10)
 
 head(data_nnl$tdm, n=10)
@@ -116,14 +116,11 @@ curve_nchi
 ```
 
 ```{r}
-facet_plot <- facetPlot(data, 
-                        keyword_selection = list(type="frequency", n=3, kw.list=NULL),
-                       r = 4, 
-                       scales = "free", 
-                       leg = TRUE, 
-                       themety = "light",
-                       size_class = NULL, 
-                       x_lab = "year")
+facet_plot <- facetPlot(data,
+   keyword_selection = list(type = "frequency", n = 3),
+   r = 4,
+   scales = "free"
+ )
 facet_plot
 ```
 

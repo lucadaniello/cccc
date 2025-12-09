@@ -4,7 +4,14 @@
 \alias{curvePlot}
 \title{Plot Temporal Trajectories/Curves of Keyword Frequencies}
 \usage{
-curvePlot(data, r = 1, themety = "light", size_class = NULL, x_lab = "year")
+curvePlot(
+  data,
+  r = 1,
+  themety = "light",
+  size_class = NULL,
+  x_lab = "year",
+  y_lab = NULL
+)
 }
 \arguments{
 \item{data}{A list object returned by \code{importData()}, containing:
@@ -22,9 +29,18 @@ only every third year is labeled. Default: \code{1} (show all years).}
 \item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
 
 \item{size_class}{Numeric vector specifying line widths for each frequency zone.
-If \code{NULL}, defaults are set based on theme and number of zones.}
+If \code{NULL}, defaults are set based on theme and number of zones:
+\itemize{
+\item light theme: c(0.1, 0.2, 0.35, 0.35)
+\item dark theme: c(0.35, 0.5, 0.5, 0.5)
+}
+The vector is automatically truncated to match the number of zones.}
 
 \item{x_lab}{Character. Label for the x-axis. Default: \code{"year"}.}
+
+\item{y_lab}{Character. Label for the y-axis. Default: automatically set based on
+\code{data$norm} (\code{"keyword (normalized) frequency"} if normalized,
+\code{"keyword frequency"} otherwise). Can be customized by the user.}
 }
 \value{
 A \code{ggplot2} object showing keyword frequency trajectories over time,
@@ -43,7 +59,8 @@ for the x-axis, while displaying actual year labels. This ensures correct spacin
 even if years are not consecutive in the data.
 
 Line widths are mapped to frequency zones using \code{scale_linewidth_manual()},
-with higher-frequency zones typically shown with thicker lines.
+with higher-frequency zones typically shown with thicker lines (but this can be
+customized with the \code{size_class} parameter).
 }
 \examples{
 \dontrun{
@@ -57,6 +74,9 @@ curvePlot(data)
 
 # Custom theme and label thinning
 curvePlot(data, r = 2, themety = "dark")
+
+# Custom y-axis label
+curvePlot(data, y_lab = "Normalized frequency (per 1000 tokens)")
 
 # Manual line width specification
 curvePlot(data, size_class = c(0.3, 0.4, 0.5, 0.6))

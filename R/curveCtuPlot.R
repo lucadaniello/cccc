@@ -25,9 +25,18 @@
 #'   only every second year is labeled. Default: \code{1} (show all years).
 #' @param themety Character. Plot theme: \code{"light"} (default) or \code{"dark"}.
 #' @param size_class Numeric vector specifying line widths for each frequency zone.
+#'   Must have length equal to the number of zones. If \code{NULL}, defaults to:
+#'   \itemize{
+#'     \item light theme: c(0.2, 0.3, 0.35, 0.35)
+#'     \item dark theme: c(0.35, 0.5, 0.5, 0.5)
+#'   }
+#' @param size_example Numeric vector specifying line widths for each example keyword.
 #'   Must have length equal to the number of zones. If \code{NULL}, defaults to
-#'   \code{rep(0.3, n_zones)} for light theme or \code{rep(0.5, n_zones)} for dark theme.
+#'   c(1.15, 1.05, 0.95, 0.75), creating a visual hierarchy.
 #' @param x_lab Character. Label for the x-axis. Default: \code{"year"}.
+#' @param y_lab Character. Label for the y-axis. Default: automatically set based on
+#'   \code{data$norm} (\code{"keyword (normalized) frequency"} if normalized,
+#'   \code{"keyword frequency"} otherwise). Can be customized by the user.
 #'
 #' @return A \code{ggplot} object with two legends:
 #'   \itemize{
@@ -36,9 +45,9 @@
 #'   }
 #'
 #' @details
-#' Zone lines are displayed with 70\% transparency (alpha = "70") to create a subtle
-#' background layer, while example keywords are drawn with full opacity and thicker
-#' lines (linewidth = 0.8) for emphasis.
+#' Zone lines are displayed with 80\% opacity (alpha = "80") to create a subtle
+#' background layer, while example keywords are drawn with full opacity and variable
+#' line widths (controlled by \code{size_example}) for emphasis.
 #'
 #' The function validates that:
 #' \itemize{
@@ -62,11 +71,23 @@
 #'   themety = "light"
 #' )
 #'
+#' # With custom line widths for examples
+#' curveCtuPlot(data,
+#'   ctu_noun = c("person", "object", "instruct", "incident"),
+#'   size_example = c(1.5, 1.2, 1.0, 0.8)
+#' )
+#'
 #' # With linguistic zones (3 zones)
 #' data_ling <- importData(tdm_file = tdm, corpus_file = corpus, zone = "ling")
 #' curveCtuPlot(data_ling,
 #'   ctu_noun = c("frequent_word", "medium_word", "rare_word"),
 #'   r = 1
+#' )
+#'
+#' # Custom y-axis label
+#' curveCtuPlot(data,
+#'   ctu_noun = c("person", "object", "instruct", "incident"),
+#'   y_lab = "Normalized frequency (per 1000 tokens)"
 #' )
 #' }
 #'
@@ -75,16 +96,21 @@ curveCtuPlot <- function(data,
                          r = 1,
                          themety = "light",
                          size_class = NULL,
-                         x_lab = "year") {
+                         size_example = NULL,
+                         x_lab = "year",
+                         y_lab = NULL) {
 
   # Input validation
   if (is.null(ctu_noun)) {
     stop("Argument 'ctu_noun' is required. Provide one keyword per frequency zone.")
   }
 
-  norm <- data$norm
+  # Set default y_lab if not provided
+  if (is.null(y_lab)) {
+    y_lab <- ifelse(data$norm, "keyword (normalized) frequency", "keyword frequency")
+  }
+
   col_leg <- ifelse(themety == "light", "black", "white")
-  y_lab <- ifelse(norm, "keyword (normalized) frequency", "keyword frequency")
 
   tdm <- data$tdm
   dat_l <- data$tdm_long
@@ -113,20 +139,42 @@ curveCtuPlot <- function(data,
     col_class <- setNames(data$colors_dark, zone_levels)
     base_theme <- theme_dark()
   }
-  col_class <- paste0(col_class, "70")  # Add transparency for background zones
+  col_class <- paste0(col_class, "80")  # Add transparency for background zones
 
   # Colors for example keywords (distinct from zone colors)
-  col_kw <- colorlist(type = themety)[n_zones + seq_len(n_zones)]
+  # Skip some colors to avoid overlap with zone colors
+  col_kw <- colorlist(type = themety)[(n_zones + 1):(2 * n_zones)]
   names(col_kw) <- ctu_noun
 
-  # Set line widths
+  # Set default line widths for zones
   if (is.null(size_class)) {
-    size_class <- if (themety == "light") rep(0.3, n_zones) else rep(0.5, n_zones)
+    size_class <- if (themety == "light") {
+      c(0.2, 0.3, 0.35, 0.35)[1:n_zones]
+    } else {
+      c(0.35, 0.5, 0.5, 0.5)[1:n_zones]
+    }
   }
+
+  # Validate size_class length
   if (length(size_class) != n_zones) {
-    stop(paste0("'size_class' must have length ", n_zones, " (one per zone)."))
+    warning(paste0("'size_class' has length ", length(size_class),
+                   " but there are ", n_zones, " zones. Recycling values."))
+    size_class <- rep_len(size_class, n_zones)
   }
   names(size_class) <- zone_levels
+
+  # Set default line widths for example keywords (decreasing hierarchy)
+  if (is.null(size_example)) {
+    size_example <- c(1.15, 1.05, 0.95, 0.75)[1:n_zones]
+  }
+
+  # Validate size_example length
+  if (length(size_example) != n_zones) {
+    warning(paste0("'size_example' has length ", length(size_example),
+                   " but there are ", n_zones, " keywords. Recycling values."))
+    size_example <- rep_len(size_example, n_zones)
+  }
+  names(size_example) <- ctu_noun
 
   # Prepare x-axis labels
   year <- dat_l$year %>% unique %>% as.numeric
@@ -149,7 +197,7 @@ curveCtuPlot <- function(data,
   }))
   example_df$example <- factor(example_df$example, levels = ctu_noun)
 
-  # Theme customization
+  # Theme customization (fixed negative margins)
   opts <- base_theme +
     theme(
       plot.margin = unit(c(0.1, 0.1, 0.4, 0.1), "lines"),
@@ -160,7 +208,7 @@ curveCtuPlot <- function(data,
       legend.position = "bottom",
       legend.box = "vertical",
       legend.box.spacing = unit(0.3, "lines"),
-      legend.margin = margin(t = 2, b = 0),
+      legend.margin = margin(t = 2, b = 0),  # Fixed: non-negative margins
       legend.background = element_rect(fill = NA),
       legend.key = element_rect(colour = NA, fill = NA),
       legend.text = element_text(face = "bold", size = rel(0.85), color = col_leg),
@@ -177,26 +225,27 @@ curveCtuPlot <- function(data,
       values = col_class,
       breaks = zone_levels,
       labels = zone_labels,
-      guide = guide_legend(order = 1, override.aes = list(linewidth = 1.5, alpha = 1))
-    ) +
-    scale_linewidth_manual(
-      values = size_class,
-      guide = "none"
+      guide = guide_legend(order = 1, override.aes = list(alpha = 1, linewidth = 1.5))  # Solid in legend
     ) +
 
     # Reset color scale for example keywords
     ggnewscale::new_scale_colour() +
 
-    # Second layer: example keywords (solid, thicker)
+    # Second layer: example keywords (solid, variable width)
     geom_line(
       data = example_df,
-      aes(x = chrono, y = freq, group = example, colour = example),
-      linewidth = 0.8
+      aes(x = chrono, y = freq, group = example, colour = example, linewidth = example)
     ) +
     scale_colour_manual(
       name = "Example Keywords",
       values = col_kw,
       guide = guide_legend(order = 2, override.aes = list(linewidth = 1.5))
+    ) +
+
+    # Single linewidth scale for both zones and examples
+    scale_linewidth_manual(
+      values = c(size_class, size_example),
+      guide = "none"
     ) +
 
     # Axes and labels

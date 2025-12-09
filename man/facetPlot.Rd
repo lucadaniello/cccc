@@ -12,7 +12,9 @@ facetPlot(
   leg = TRUE,
   themety = "light",
   size_class = NULL,
-  x_lab = "year"
+  size_kw = NULL,
+  x_lab = "year",
+  y_lab = NULL
 )
 }
 \arguments{
@@ -55,7 +57,12 @@ only every fourth year is labeled. Default: 4.}
 \item{size_class}{Numeric vector specifying line widths for background zone lines.
 Length must match number of zones. If \code{NULL}, defaults to 0.1 for all zones.}
 
+\item{size_kw}{Numeric. Line width for highlighted keywords. Default: 0.7.}
+
 \item{x_lab}{Character. Label for x-axis. Default: \code{"year"}.}
+
+\item{y_lab}{Character. Label for y-axis. If \code{NULL} (default), uses
+"keyword frequency" or "keyword (normalized) frequency" based on \code{data$norm}.}
 }
 \value{
 A \code{ggplot} object with faceted panels (one per zone) showing keyword
