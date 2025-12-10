@@ -18,107 +18,46 @@ facetPlot(
 )
 }
 \arguments{
-\item{data}{A list object returned by \code{importData()}, containing:
-\itemize{
-\item \code{tdm_long}: long-format frequency data with columns \code{keyword},
-\code{zone}, \code{year}, \code{chrono}, \code{freq}, and \code{tot_freq}
-\item \code{zone}: factor levels for frequency zones
-\item \code{colors_light} and \code{colors_dark}: zone color palettes
-}}
+\item{data}{A list object returned by \code{importData()}, containing the term-document matrix in long format and metadata.}
 
-\item{keyword_selection}{A list specifying how to select keywords to highlight:
+\item{keyword_selection}{A list specifying how to select the keywords to highlight. The list should contain:
 \describe{
-\item{\code{type}}{Character. One of:
-\itemize{
-\item \code{"frequency"}: select top N keywords by total frequency per zone
-\item \code{"random"}: randomly sample N keywords per zone
-\item \code{"list"}: use custom keyword list from \code{kw.list}
-}
-}
-\item{\code{n}}{Integer. Number of keywords to select per zone
-(used for \code{type = "frequency"} or \code{"random"}). Default: 3.}
-\item{\code{kw.list}}{Character vector. Custom list of keywords to highlight
-(used for \code{type = "list"}). Must exist in the data.}
+\item{\code{type}}{ (character) One of \code{"frequency"}, \code{"random"}, or \code{"list"} to choose keywords based on total frequency, at random, or from a user-defined list.}
+\item{\code{n}}{ (integer) Number of keywords to select per zone (used for \code{type = "frequency"} or \code{"random"}).}
+\item{\code{kw.list}}{ (character vector) List of specific keywords to plot (used for \code{type = "list"}).}
 }}
 
-\item{r}{Integer. Interval for thinning x-axis labels. If \code{r = 4},
-only every fourth year is labeled. Default: 4.}
+\item{r}{An integer that controls the thinning of x-axis year labels (e.g., every \code{r}-th year is labeled).}
 
-\item{scales}{Character. Y-axis scaling across facets:
-\itemize{
-\item \code{"fixed"} (default): same y-axis scale for all zones
-\item \code{"free"}: independent y-axis scale per zone (useful for comparing patterns)
-}}
+\item{scales}{Character. Whether y-axis scales should be \code{"fixed"} (default) or \code{"free"} across facets.}
 
-\item{leg}{Logical. Whether to display the legend. Default: \code{TRUE}.}
+\item{leg}{Logical. Whether to display the legend (\code{TRUE} by default).}
 
-\item{themety}{Character. Plot theme: \code{"light"} (default) or \code{"dark"}.}
+\item{themety}{Character. Theme type: \code{"light"} (default) or \code{"dark"}.}
 
-\item{size_class}{Numeric vector specifying line widths for background zone lines.
-Length must match number of zones. If \code{NULL}, defaults to 0.1 for all zones.}
+\item{size_class}{Optional numeric vector. Specifies the relative thickness of lines by zone. Defaults are assigned if not provided.}
 
-\item{size_kw}{Numeric. Line width for highlighted keywords. Default: 0.7.}
+\item{size_kw}{Optional value. Specifies the relative thickness of lines of keywords. A default value is assigned if not provided.}
 
-\item{x_lab}{Character. Label for x-axis. Default: \code{"year"}.}
+\item{x_lab}{Character. Label for the x-axis. Defaults to \code{"year"} but can be customized (e.g., \code{"year/volume"}).}
 
-\item{y_lab}{Character. Label for y-axis. If \code{NULL} (default), uses
-"keyword frequency" or "keyword (normalized) frequency" based on \code{data$norm}.}
+\item{y_lab}{Character. Label for y-axis (default = "keyword frequency" or "keyword (normalized) frequency").}
 }
 \value{
-A \code{ggplot} object with faceted panels (one per zone) showing keyword
-frequency trajectories. Background lines show all keywords in each zone with
-transparency, while selected keywords are highlighted with distinct colors.
+A \code{ggplot} object showing smoothed or raw frequency curves of selected keywords, grouped by zone.
 }
 \description{
-This function creates a faceted \code{ggplot2} visualization of keyword frequency curves
-across time, grouped by frequency zone. Each panel (facet) corresponds to one frequency zone
-and displays:
-\enumerate{
-\item All keywords in that zone as thin, semi-transparent lines (background)
-\item A subset of selected keywords as highlighted, colored lines (foreground)
-}
-}
-\details{
-Keywords can be selected by total frequency (top N), randomly (random N), or from a custom list.
-
-The function uses two color layers:
-\itemize{
-\item Zone colors (with 70\\% transparency) for background lines
-\item Distinct keyword colors for highlighted trajectories
-}
-
-When \code{type = "list"}, keywords that don't exist in the data will be silently ignored.
-If a zone has fewer than \code{n} keywords, all available keywords will be selected.
+This function creates a faceted \code{ggplot2} visualization of keyword frequency curves across time, grouped by frequency zone. It allows selecting a subset of keywords either by random sampling, by frequency, or by a custom list. The function returns a \code{ggplot} object where each panel corresponds to a frequency zone, and selected keywords are highlighted with distinct colors.
 }
 \examples{
 \dontrun{
 tdm <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
-  sep_tdm = ";", sep_corpus_info = ";", zone = "stat")
+sep_tdm = ";",sep_corpus_info = ";",zone="stat")
 
-# Select top 3 keywords by frequency per zone
-facetPlot(data,
-  keyword_selection = list(type = "frequency", n = 3),
-  r = 4,
-  scales = "free"
-)
-
-# Random selection with dark theme
-facetPlot(data,
-  keyword_selection = list(type = "random", n = 5),
-  themety = "dark",
-  scales = "fixed"
-)
-
-# Custom keyword list
-facetPlot(data,
-  keyword_selection = list(
-    type = "list",
-    kw.list = c("person", "object", "instruct")
-  ),
-  leg = TRUE
-)
+facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
+r = 4, scales = "free", leg = TRUE, themety = "light", size_class = NULL, x_lab = "year")
 }
 
 }

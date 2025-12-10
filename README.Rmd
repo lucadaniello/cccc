@@ -116,11 +116,10 @@ curve_nchi
 ```
 
 ```{r}
-facet_plot <- facetPlot(data,
+facet_plot <- facetPlot(data_nchi,
    keyword_selection = list(type = "frequency", n = 3),
    r = 4,
-   scales = "free"
- )
+   scales = "free")
 facet_plot
 ```
 
