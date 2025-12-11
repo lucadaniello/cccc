@@ -200,7 +200,7 @@ p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
 
 ### Subcorpora dimension
 
-We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`).
+We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots.
 
 ```{r subcorpora-size}
 ind_d <- data$year_cols
