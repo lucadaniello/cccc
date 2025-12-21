@@ -7,33 +7,39 @@
 plotOptimalSmoothing(
   data,
   opt_result,
-  m_opt = NULL,
-  penalty_opt = NULL,
-  ylab = "Frequency",
+  m = NULL,
+  penalty = NULL,
+  ylab = "normalized frequency",
   xlim = NULL,
+  nug = c(20, 100),
+  r = 2,
   main = NULL,
   lwd = 1,
-  nx = NULL
+  nx = FALSE
 )
 }
 \arguments{
 \item{data}{A list as returned by \code{importData()}, containing the term-document matrix and metadata.}
 
-\item{opt_result}{A list as returned by \code{optimalSmoothing()}, including optimal degree and penalty type.}
+\item{opt_result}{A list as returned by \code{optimalSmoothing()}, including optimal order and penalty type (as well as the optimal smoothing parameter lLambda), or a list containing the smoothing selection results for the chosen penalty type.}
 
-\item{m_opt}{Optional. Integer indicating the spline degree to override the optimal one.}
+\item{m}{Optional. If \code{penalty_opt} is not \code{NULL}, integer indicating the spline order to override the optimal one.}
 
-\item{penalty_opt}{Optional. Character string to override the selected penalization type (e.g., \code{"m-2"}, \code{"2"}, \code{"1"}, or \code{"0"}).}
+\item{penalty}{Optional. Character string to override the selected penalization type (e.g., \code{"m-2"}, \code{"2"}, \code{"1"}, or \code{"0"}).}
 
-\item{ylab}{Character. Y-axis label. Defaults to \code{"Frequency"}.}
+\item{ylab}{Character. Y-axis label. Defaults to \code{"normalized frequency"}.}
 
 \item{xlim}{Numeric vector of length 2 specifying the x-axis range. If \code{NULL}, it is determined automatically.}
+
+\item{nug}{Numeric vector of length 2 setting x-axis and y-axis padding factors to avoid clipping of curves at the plot borders. Default is \code{(100,20)}.}
+
+\item{r}{Integer. Thinning factor for x-axis year labels (e.g., every \code{r}-th year is labeled). Default is \code{2}.}
 
 \item{main}{Optional. Plot title. If \code{NULL}, a dynamic expression is used showing the optimal degree, penalty, and GCV value.}
 
 \item{lwd}{Numeric. Line width scaling factor. Default is \code{1}.}
 
-\item{nx}{Integer. Number of evaluation points for the smoothed curves. Default is \code{10 × number of years}.}
+\item{nx}{Integer. Number of evaluation points for the smoothed curves. Default is \code{number of sampled time points (e.g. years)}.}
 }
 \value{
 A \code{ggplot2} object displaying raw (dashed gray) and smoothed (colored) frequency curves for all keywords over time.
@@ -45,9 +51,12 @@ and the smoothed curves (solid colored lines) using optimal smoothing parameters
 previously selected by \code{optimalSmoothing()}.
 }
 \details{
-Smoothing is performed using B-spline basis functions with roughness penalties. The smoothed
-functions are evaluated over a dense grid of points (default: 10 × number of years) to provide
-a high-resolution visualization.
+Smoothing is performed using B-spline basis functions with roughness penalties.
+The smoothed functions are evaluated over the sampled points (by default) or over
+a dense grid of points (input \code{nx} × total number of years) to provide a
+high-resolution visualization.
+The function returns, besides a ggplot object, both the smoothed functional data object
+and a matrix of evaluated smoothed curves over a chosen grid.
 }
 \examples{
 \dontrun{

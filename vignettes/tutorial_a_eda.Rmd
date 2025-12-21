@@ -1,61 +1,90 @@
 ---
-title: "Tutorial: Exploratory Data Analysis EDA"
+title: "Tutorial: Exploratory Data Analysis (EDA)"
 author: "matilde trevisani"
 date: "`r Sys.Date()`"
 output: 
-  rmarkdown::html_vignette:
-    toc: true
-    toc_depth: 3
-    fig_width: 8
-    fig_height: 5
+ rmarkdown::html_vignette:
+   toc: true
+   toc_depth: 3
+   fig_width: 8
+   fig_height: 5
+   # highlight: espresso    # textmate  breezedark  haddock  espress monochrome  pygments
+   df_print: "tibble" # other options: paged, kable, tibble
 vignette: >
-  %\VignetteIndexEntry{Tutorial: Exploratory Data Analysis}
+  %\VignetteIndexEntry{Tutorial: Exploratory Data Analysis (EDA)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r optcmd, echo=FALSE, cache=F}
+draft <- T
+track <- T
+figeval <- T
+raw <- T # T when locally knitting, set to F when creating vignettes within installation
+over <- T # overwrite cached objects
+```
+
+```{r utils, echo=F}
+nam_work <- "JPSP"
+```
+
+
+```{r setup, include=FALSE, cache=F}
 knitr::opts_chunk$set(
-  echo = TRUE,
-  collapse = TRUE,
-  comment = "#>",
+  echo = track, 
+  collapse = TRUE, 
+  comment = "#>", 
+  fig.path = paste0(nam_work,'_fig/eda/'), 
+  cache = 2, 
+  cache.path=paste0(nam_work,'_cache/'), 
+  cache.comments = F, 
+  autodep = TRUE, 
+  cache.extra = knitr::rand_seed,
   fig.align = 'center',
+  #crop = TRUE,
   fig.width = 8,
   fig.height = 5,
   out.width = '100%',
-  warning = FALSE,
-  message = FALSE
-)
+  warning = track,
+  message = track
+  )
 
 # Cairo opzionale per figure di alta qualità
 if (requireNamespace("Cairo", quietly = TRUE)) {
   knitr::opts_chunk$set(dev = 'png', dev.args = list(type = "cairo"))
 }
+
+knitr::opts_knit$set(aliases=c(h = 'fig.height', w = 'fig.width'), unnamed.chunk.label = "fig")
 ```
 
-```{r packages, include=FALSE}
+
+
+```{r packages, include=FALSE, cache=F}
 # Main package
 library(cccc)
 
 # Data manipulation
 library(dplyr)
-library(tibble)
+library(tibble) # as_tibble, rownames_to_column
 
 # Visualization
 library(ggplot2)
-library(patchwork)
+#library(patchwork)
 
 # Interactive tables
 library(DT)
+
+library(magrittr) # %*%, non serve più per divide_by
+library(ggpubr) # get_legend, può servire ancora per ggarrange
 ```
+
 
 # Data
 
 ## Raw data
 
 For illustration we consider the data extracted from the titles of *Journal of Personality and Social Psychology* articles from 1965 to 2021. They consist in a term-document matrix (TDM) with lexical units (words or multi-word expressions) by row and their frequencies (in the titles of articles published in each year) by column, and a corpus-level metadata table with the total number of words in the articles (`Dim`), the number of articles (`Nart`) and  the reference volume for each year.
-
-```{r load-data}
+```{r load-data, echo=track}
 # Load raw data from package
 tdm_filename <- system.file("extdata", "tdm.csv", package = "cccc")
 corpus_filename <- system.file("extdata", "corpus.csv", package = "cccc")
@@ -66,10 +95,10 @@ if (tdm_filename == "" || corpus_filename == "") {
 }
 
 tdm <- read.csv2(tdm_filename)
-corpus <- read.csv2(corpus_filename)
+corpus <- read.csv2(corpus_filename)  
 ```
 
-```{r show-raw-data}
+```{r show-raw-data, results=draft}
 datatable(
   tdm,
   options = list(
@@ -80,7 +109,6 @@ datatable(
   ),
   caption = "Term-Document Matrix (raw data)"
 )
-
 datatable(
   corpus,
   options = list(
@@ -94,7 +122,7 @@ datatable(
 
 Raw data must be in CSV or Excel format, with the TDM having keywords^[We call "keywords" all the lexical units represented in the TDM as they are obtained from a selection of the original textual units extracted from the corpus.] in the first column and yearly frequencies in subsequent columns, and the corpus metadata containing at least year, total number of tokens and number of documents per year (second and third column respectively, any additional metadata in the fourth column if present). Note that time-points defining the subcorpora (of the diachronic corpus) may be of any temporal scale (most frequently they are years).
 
-Raw data are processed by the function `importData()` which standardizes the format, renames columns, cleans keywords, and computes the total frequency per keyword. Furthermore, it classifies terms into frequency zones and creates a column representing the frequency interval associated with each zone.
+Raw data are processed by the function `importData()` which standardizes the format, renames columns, cleans keywords, and computes the total frequency per keyword. Furtherly, it classifies terms into frequency zones and creates a column representing the frequency interval associated with each zone.
 
 ```{r import-data}
 data <- importData(
@@ -104,13 +132,12 @@ data <- importData(
   sep_corpus_info = ";",
   zone = "stat",
   verbose = FALSE
-)
+  )
 
 tdm <- data$tdm
 corpus_info <- data$corpus_info
 ```
-
-```{r show-imported-data}
+```{r show-imported-data, results=draft}
 datatable(
   tdm,
   options = list(
@@ -121,7 +148,6 @@ datatable(
   ),
   caption = "Term-Document Matrix (processed)"
 )
-
 datatable(
   corpus_info,
   options = list(
@@ -135,7 +161,7 @@ datatable(
 
 Other information returned by `importData()` are whether the TDM has been normalized (default is FALSE), which columns in the TDM refer to yearly frequencies, the unique frequency zones and other items for graphical use.
 
-```{r data-info}
+```{r data-info, echo=track}
 names(data)
 data$norm
 data$year_cols
@@ -145,18 +171,17 @@ data$year_cols
 
 Keyword total frequency is highly variable. For convenience, keywords are grouped by their frequency class.
 The default zone classification method is statistical, based on quartiles or balanced classes. The zones and their associated frequency intervals are:
-
 ```{r zones}
 data$zone
 noquote(data$int_freq)
-table(data$tdm$zone)
+table(tdm$zone)
 
-# Check quartiles
+# check quartiles 
 cut(
   tdm$tot_freq, 
-  breaks = quantile(tdm$tot_freq, probs = seq(0, 1, by = 0.25)), 
-  include.lowest = TRUE
-) %>% table()
+  breaks=quantile(tdm$tot_freq, probs = seq(0,1, by=0.25)),
+  include.lowest = T
+  ) %>% table()
 ```
 
 We can also switch to a classification method based on linguistic frequency zones:
@@ -164,19 +189,17 @@ We can also switch to a classification method based on linguistic frequency zone
 ```{r linguistic-zones}
 data_ling <- importData(
   tdm_file = tdm_filename, 
-  corpus_file = corpus_filename,
-  sep_tdm = ";",
-  sep_corpus_info = ";",
-  zone = "ling", 
-  verbose = FALSE
-)
+  corpus_file = corpus_filename, 
+  zone="ling", 
+  verbose = F
+  )
 
 tdm_ling <- data_ling$tdm
 data_ling$zone
 noquote(data_ling$int_freq)
 ```
 
-```{r show-linguistic-tdm}
+```{r show-linguistic-tdm, results=draft}
 datatable(
   tdm_ling,
   options = list(
@@ -189,52 +212,60 @@ datatable(
 )
 ```
 
-Function `rowMassPlot` illustrates graphically the word total frequency and the zone partition by quartiles and by linguistic frequency zones.
+Function `rowMassPlot`illustrates graphically the word total frequency and the zone partition by quartiles and by linguistic frequency zones. 
+<!-- (Figure \ref{fig:rowmass}). -->
 
-```{r rowmass-plot, fig.width=10, fig.height=4, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)"}
+```{r, eval = F}
+rowMassPlot(data)
+rowMassPlot(data_ling)
+```
+```{r rowmass-plot, echo = F, out.width='80%', w = 6, h = 2.8, warning=track, fig.cap="Keyword total frequencies and zones based on quartiles (left) or on linguistic frequency zones (right)", fig.label="fig:rowmass", fig.show='hold', fig.pos="p"}
 p1 <- rowMassPlot(data)
 p2 <- rowMassPlot(data_ling)
-
-p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
+ggarrange(p1, ggplot() + theme_void(), p2, nrow = 1, widths = c(1, 0.1, 1))
+# #labels = c("A", "", "B")
+#p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
 ```
+
+
 
 ### Subcorpora dimension
 
-We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots.
+We consider four different sizes for subcorpora dimension (in view of normalization by column): number of documents (`nDoc`), total number of word-tokens in documents (`dimCorpus`), sum of keyword frequencies (column sum) in the TDM (`Csum`), maximum keyword frequency (maximum column frequency) in the TDM (`Mcf`). The first two are in the corpus metadata, the latter two can be computed from the TDM. The four measures are in general strongly correlated (except for `Mcf`). They can be visualized graphically as bar plots or line plots. 
+<!-- (Figure \ref{fig:colmass}). -->
 
-```{r subcorpora-size}
+```{r subcorpora-size, echo=track, results=draft}
 ind_d <- data$year_cols
-Csum <- tdm[, ind_d] %>% apply(2, sum, na.rm = TRUE)
-Mcf <- tdm[, ind_d] %>% apply(2, max, na.rm = TRUE)
-
-d_size <- corpus_info[, c(1, 3, 2)] %>% cbind(Csum, Mcf)
+Csum <- tdm[,ind_d] %>% apply(2,sum,na.rm=T)
+Mcf <- tdm[,ind_d] %>% apply(2,max,na.rm=T)
+d_size <- corpus_info[,c(1,3,2)] %>% cbind(Csum, Mcf)
 
 datatable(
   d_size,
   options = list(
-    pageLength = 20,
+    pageLength = 10,
     scrollX = TRUE,
     dom = 'frtip'
   ),
   caption = "Subcorpora dimensions by year"
 )
 
-summary(d_size[, -1])
-apply(d_size[, -c(1, 5)], 2, sum)
+summary(d_size[,-1])
+apply(d_size[,-c(1,5)], 2,sum)
 ```
 
 Identify proper rescaling before plotting:
 
 ```{r rescaling}
+# Identify a proper rescaling before making the plot of temporal dimensions.
 sc <- c(1, 10, 10, 1)
-apply(d_size[, -1], 2, max) / sc
-ymax <- max(apply(d_size[, -1], 2, max) / sc)
+apply(d_size[,-1], 2, max) / sc
+ymax <- max(apply(d_size[,-1], 2, max) / sc) 
 ymax
 ```
 
-They can be visualized graphically as bar plots or line plots:
+```{r colmass, echo=track, results=track, w=8, h=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens(/10) in texts, column sum(/10) in the TDM, maximum column frequency in the TDM", fig.label="fig:colmass", fig.pos="p"}
 
-```{r colmass-plot, fig.width=8, fig.height=4, fig.cap="Subcorpora dimension: for each year, number of texts (dot-line), total number of word-tokens(/10) in texts, column sum(/10) in the TDM, maximum column frequency in the TDM"}
 colMassPlot(
   data, 
   sc = c(1, 10, 10, 1), 
@@ -243,16 +274,19 @@ colMassPlot(
   themety = "light", 
   size_b = 2.5, 
   x_lab = "year"
-)
+  )
+
 ```
+
 
 ### Temporal curves
 
-The overall frequency trajectories (curves) are shown for the original data and separately for each frequency class or zone (with a sample for each class).
+The overall frequency trajectories (curves) are shown for the original data and, below, also separately for each frequency class or zone (with a sample for each class). 
+<!-- (Figures \ref{fig:curves} and \ref{fig:facets}). -->
 
 The plots are based on the long-format TDM stored in `data$tdm_long`, which has `year` as a group variable and `frequency` as the associated numerical variable.
 
-```{r tdm-long}
+```{r tdm_long, include=track}
 tdm_l <- data$tdm_long
 
 datatable(
@@ -267,31 +301,35 @@ datatable(
 )
 ```
 
-```{r curves-plot, fig.width=8, fig.height=5, fig.cap="Keyword trajectories (original data)"}
-curvePlot(data, r = 2, size_class = c(0.2, 0.3, 0.4, 0.5))
+```{r curve-plot, eval=T, echo=track, w=8, h=5, fig.cap="Keyword trajectories (original data)", fig.label="fig:curves", fig.pos="p"}
+
+curvePlot(data, r = 2, size_class = c(0.1, 0.2, 0.35, 0.35))
 ```
 
-Select sample keywords for detailed visualization:
+A sample of keywords (three for each zone) can be extracted, randomly, as follows:
 
-```{r sample-keywords}
-set.seed(2222)
+```{r sample-keywords, include=T}
 r <- 3
-kw <- tdm_l %>% 
-  group_by(zone) %>% 
-  summarise(keyword = list(sample(unique(keyword), r))) %>%
-  ungroup()
+set.seed(8)
+kw <- tdm_l %>% group_by(zone) %>% summarise(keyword = list(sample(unique(keyword), r))) %>% ungroup()
+kw
+
+kw <- tdm_l %>% aggregate(keyword ~ zone, ., function(x) sample(unique(x), r))
 kw
 ```
 
-```{r curves-ctu-plot, fig.width=8, fig.height=5, fig.cap="Keyword trajectories with example keywords highlighted"}
-ctu_noun <- c("person", "object", "instruct", "incident")
+Hence, we can highlight a sample of zone-specific keywords (randomly generated as above or manually imputed) over the curves.
+```{r curves-ctu-plot, dependson=c("sample-keywords"), echo=track, w=8, h=5, fig.cap="Keyword trajectories with example keywords highlighted", fig.label="fig:curvesEtctu", fig.pos="p"}
 
-curveCtuPlot(data, ctu_noun = ctu_noun, r = 2, size_class = NULL)
+#ctu_noun <- kw %>% pull(2) %>% as.data.frame() %>% pull(1)
+ctu_noun <-  c("prejudic", "contact", "correspond", "decod")
+
+curveCtuPlot(data, ctu_noun = ctu_noun, r = 2)
 ```
 
-Top keywords by frequency class:
-
-```{r top-keywords}
+Top Keywords (i.e., with highest total frequency) per zone can also be selected.
+```{r top-Keywords}
+# select top 3 keywords by total frequency per zone
 top_kw <- tdm %>% 
   group_by(zone) %>% 
   arrange(desc(tot_freq)) %>% 
@@ -309,106 +347,251 @@ datatable(
   caption = "Top 3 keywords by frequency zone"
 )
 ```
+This kind of selection corresponds to the `type = frequency` in the function `facetPlot()`, as shown below.
 
-```{r facet-plot, fig.width=7.5, fig.height=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis"}
+```{r facet-plot, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis.", fig.label="fig:facets", fig.pos="p"}
+
 facetPlot(
   data, 
-  keyword_selection = list(type = "frequency", n = 3, kw.list = NULL),
+  keyword_selection = list(type="frequency", n=3),
   r = 4, 
-  scales = "free", 
+  scales = "free",
   leg = TRUE, 
   size_class = NULL
-)
+  )
 ```
+Let consider a list of keywords user-defined which can be imputed by setting `type = list` (as opposed to `random` or, like above, `frequency`).
+
+```{r user_kw, w=7.5, h=6, fig.cap="Keyword trajectories by frequency class (original data). Group data scale on y-axis.", fig.label="fig:facets.list", fig.pos="p"}
+
+kw_list <- c("prejudic", "problem", "trust", "contact", "order", "account", "correspond", "space", "group decis make", "decod", "physiolog respons", "smoke")
+
+facetPlot(data, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, scales = "free")
+```
+
 
 # Normalization
 
-Different normalization strategies can be applied to the TDM:
+There are different types of normalization that can be applied to raw frequencies in order to reduce the influence of subcorpus sizes and keyword overall frequencies on the analysis of temporal trajectories. The function `normalization()` implements five types of normalization: by column only (`nc`) as well as by row and column (`nchi`, `nM`, `nmM`, `nnl`). See the documentation for details.
+```{r normalize, echo=-(c(1:4, 6:7, 12:15, 19, 21, 24:26, 31:32, 36:37, 42:45, 49:50, 54:70)), include=draft}
+
+options(digits=3)
+
+cat("###### original data ######\n")
+data$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+cat("\n###### normalization by column ######\n
+## subcorpus total #tokens (dimCorpus) ##")
+
+datnc <- normalization(data, normty = "nc", 1000)
+
+datnc$norm; datnc$normty
+# datnc$tdm[, 1:9] %>% head
+datnc$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+cat("\n###### normalization by row and col ######\n
+## chisquare-like ##")
+
+datnchi <- normalization(data, normty = "nchi", 1)
+
+datnchi$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+cat("\n##  Max row freq and subcorpus total #tokens  ##\n\n")
+
+datnM <- normalization(data, normty = "nM", 1000)
+
+# datnM$tdm[, 1:9] %>% head
+datnM$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+ind_d <- data$year_cols
+datnM$tdm[, ind_d] %>% apply(1,max) %>% summary
+datnM$tdm[, ind_d] %>% apply(1,min) %>% summary
+
+cat("\n## MinMax row freq and subcorpus total #tokens  ##\n")
+
+datnmM <- normalization(data, normty = "nmM", 1000)
+
+# datnmM$tdm[, 1:9] %>% head
+datnmM$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+datnmM$tdm[, ind_d] %>% apply(1,max) %>% summary
+datnmM$tdm[, ind_d] %>% apply(1,min) %>% summary
+
+
+cat("\n## Non-linear row freq and subcorpus total #tokens ##\n")
+
+cat("Non-linear transformation:\n Difference from the minimum weights more when the distribution is positively asymmetric (p>0.5), viceversa, difference from the maximum weights more when the distribution is negatively asymmetric(p<0.5)")
+
+datnnl <- normalization(data, normty = "nnl", 1000, nnlty="M")
+p_asy <- datnnl$p_asy
+
+datnnl$tdm_long %>% group_by(zone) %>% summarize(max=max(freq), min=min(freq), mean=mean(freq), median=median(freq), q25=quantile(freq,.25), q75=quantile(freq,.75))
+
+datnnl$tdm[, ind_d] %>% apply(1,max) %>% summary
+datnnl$tdm[, ind_d] %>% apply(1,min) %>% summary
+# datnmM[, ind_d] %>% apply(2,max)
+# datnmM[, ind_d] %>% apply(2,min)
+
+# Non-linear norm with variance-based asymmetry index
+# datnnl <- normalization(data, normty = "nnl", 1000, nnlty="V")
+# p_asy <- datnnl$p_asy
+# 
+# # # kw 379 has VL=1, p=1, then 0/0 when x=min
+# # datnnl[379,]
+# # datnnl[379,2+which(apply(datnnl[379,-(1:2)], 1, is.nan))] <- 0
+# # datnnl[379,]
+# 
+# # check any nonfinite value
+# apply(datnnl$tdm[, ind_d], 1, function(x){any(is.na(x))}) %>% sum
+# apply(datnnl$tdm[, ind_d], 1, function(x){any(is.infinite(x))}) %>% sum
+# apply(datnnl$tdm[, ind_d], 1, function(x){any(is.nan(x))}) %>% sum
+
+```
+Some exploratory analysis on the asymmetry index `p_asy` used in the non-linear normalization and on the effect on keyword frequencies is shown below.
+```{r asy_eda, echo = -c(1:2), eval=T}
+options(digits=3)
+
+temp <- datnnl$tdm %>% cbind(p_asy=datnnl$p_asy) 
+# How many keywords have p_asy > 0.5
+temp %$% table(zone, p_asy>.5)
+# Summary statistics of p_asy by zone
+temp %>%
+  group_by(zone) %>%
+  summarise(min=min(p_asy), p25=quantile(p_asy,.25),me=median(p_asy),p75=quantile(p_asy,.75),max=max(p_asy), mean=mean(p_asy))
+
+cat("\nComparing MinMax to non-linear norm:\n")
+kw_compare <- c("pain", "mental health")
+temp %>% select(keyword, zone, p_asy) %>% filter(keyword%in%kw_compare)
+rbind(datnmM$tdm %>% filter(keyword%in%kw_compare), datnnl$tdm %>% filter(keyword%in%kw_compare))[,c(1, 4:ind_d[5], last(ind_d)-(8:0))] %>% t() %>% noquote()
+
+
+```
 
 ## Normalization by column
 
-Subcorpus total tokens (dimCorpus):
+Normalization by column (subcorpus total \#tokens) (Figure \ref{fig:curvesnc}-\ref{fig:facetsnc})
 
-```{r norm-nc}
-datnc <- normalization(data, normty = "nc", sc = 1000)
+
+```{r curvesnc, echo=track, w=8, h=5, fig.cap="Keyword trajectories (data normalized by column, subcorpus dimension)", fig.label="fig:curvesnc", fig.pos="p", out.width='100.0%', eval=draft}
+
+curvePlot(datnc, r = 2, y_lab = "keyword (column normalized) frequency")
+
 ```
 
-## Normalization by row and column
+```{r curvesEtctunc, echo=track, results=draft, w=8, h=5, fig.cap="Keyword trajectories (data normalized by column, subcorpus dimension)", fig.label="fig:curvesEtctunc", fig.pos="p", out.width='100.0%', eval=draft}
 
-Chi-square-like normalization:
+curveCtuPlot(datnc, ctu_noun, r = 2, y_lab = "keyword (column normalized) frequency")
 
-```{r norm-nchi}
-datnchi <- normalization(data, normty = "nchi", sc = 1)
 ```
 
-Max row frequency and subcorpus total tokens:
+```{r facetsnc, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency class (data normalized by column)", fig.label="fig:facetsnc", fig.pos="p", out.width='100.0%', eval=T}
 
-```{r norm-nM}
-datnM <- normalization(data, normty = "nM", sc = 1000)
+facetPlot(datnc, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, scales = "free", y_lab = "keyword (column normalized) frequency")
+
 ```
 
-MinMax row frequency and subcorpus total tokens:
+## Chisquare-like (double) normalization 
 
-```{r norm-nmM}
-datnmM <- normalization(data, normty = "nmM", sc = 1000)
+Double normalization (chisquare-like) (Figure \ref{fig:curvesnchi}-\ref{fig:facetsnchi})
+
+
+```{r curvesnchi, echo=track, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, chisquare-like)", fig.label="fig:curvesnchi", fig.pos="p", out.width='100.0%', eval=figeval}
+
+curvePlot(datnchi, r = 2, y_lab = "keyword (doubly normalized) frequency (X2-like)")
+
 ```
 
-## Non-linear normalization
+```{r curvesEtctunchi, echo=track, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, chisquare-like)", fig.label="fig:curvesEtctunchi", fig.pos="p", out.width='100.0%', eval=figeval}
 
-Non-linear transformation: Difference from the minimum weights more when the distribution is positively asymmetric (p>0.5), vice versa, difference from the maximum weights more when the distribution is negatively asymmetric (p<0.5).
+curveCtuPlot(datnchi, ctu_noun, r = 2, y_lab = "keyword (doubly normalized) frequency (X2-like)")
 
-```{r norm-nnl}
-datnnl <- normalization(data, normty = "nnl", sc = 1000, nnlty = "M")
 ```
 
-Check normalization results:
+```{r facetsnchi, echo=track,  w=7.5, h=11, fig.cap="Keyword trajectories by frequency size class (data doubly normalized, chisquare-like)", fig.label="fig:facetsnchi", fig.pos="p", out.width='100.0%', eval=figeval}
 
-```{r norm-results}
-names(datnc)
-datnc$norm
-datnc$normty
+p1 <- facetPlot(datnchi, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, leg = F, scales = "fixed", y_lab = "keyword (doubly normalized) frequency (X2-like)") + labs(x = NULL)
+p2 <- facetPlot(datnchi, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4,  scales = "free", y_lab = "keyword (doubly normalized) frequency (X2-like)")
+legend <- get_legend(p2)
+p2 <- p2 + theme(legend.position="none")
+ggarrange(p1, p2, legend, nrow=3, heights=c(3.95, 4, .75))
 
-datatable(
-  head(datnc$tdm, 20),
-  options = list(
-    pageLength = 10,
-    scrollX = TRUE,
-    dom = 'frtip'
-  ),
-  caption = "Normalized TDM (first 20 rows)"
-)
-
-datatable(
-  head(datnc$tdm_long, 50),
-  options = list(
-    pageLength = 10,
-    scrollX = TRUE,
-    dom = 'frtip'
-  ),
-  caption = "Normalized TDM in long format (first 50 rows)"
-)
 ```
 
-Asymmetry analysis for non-linear normalization:
+## Word maximum frequency (double) normalization
 
-```{r asymmetry}
-names(datnnl)
-temp <- datnnl$tdm[, c(1, 4)] %>% cbind(datnnl$p_asy)
+Double normalization (by maximum row frequency) (Figure \ref{fig:curvesnM}-\ref{fig:facetsnM})
 
-datatable(
-  head(temp, 20),
-  options = list(
-    pageLength = 10,
-    scrollX = TRUE,
-    dom = 'frtip'
-  ),
-  caption = "Asymmetry coefficients (first 20 rows)"
-)
+
+```{r curvesnM, echo=track, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, maximum row frequency)", fig.label="fig:curvesnM",fig.pos="p", out.width='100.0%', eval=F}
+
+curvePlot(datnM, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (Max row freq)")
 ```
 
-<!-- # Session Information -->
 
-<!-- ```{r session-info} -->
-<!-- sessionInfo() -->
-<!-- ``` -->
+```{r curvesEtctunM, echo=track, results=draft, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, maximum row frequency)", fig.label="fig:curvesEtctunM", fig.pos="p", out.width='100.0%', eval=F}
+
+curveCtuPlot(datnM, ctu_noun, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (Max row freq)")
+```
+
+
+```{r facetsnM, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency size class (data doubly normalized, maximum row frequency)", fig.label="fig:facetsnM", fig.pos="p", out.width='100.0%', eval=F}
+
+facetPlot(datnM, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, size_class = rep(.1,4), scales = "free", y_lab = "keyword (doubly normalized) frequency (Max row freq)")
+```
+
+
+## Minmax (double) normalization
+
+Double normalization (by row minmax) (Figure \ref{fig:curvesnmM}-\ref{fig:facetsnmM})
+
+```{r curvesnmM, echo=track, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, row minmax)", fig.label="fig:curvesnmM",fig.pos="p", out.width='100.0%', eval=figeval}
+
+curvePlot(datnmM, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (MinMax)")
+```
+
+
+```{r curvesEtctunmM, echo=track, results=draft, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, row minmax)", fig.label="fig:curvesEtctunmM", fig.pos="p", out.width='100.0%', eval=figeval}
+
+curveCtuPlot(datnmM, ctu_noun, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (MinMax)")
+```
+
+
+```{r facetsnmM, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency size class (data doubly normalized, row minmax)", fig.label="fig:facetsnmM", fig.pos="p", out.width='100.0%', eval=figeval}
+
+facetPlot(datnmM, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, size_class = rep(.1,4), scales = "free", y_lab = "keyword (doubly normalized) frequency (MinMax)")
+```
+
+
+## Non-linear (double) normalization
+
+Double normalization (by nonlinear row frequency normalization) (Figure \ref{fig:curvesnnl}-\ref{fig:facetsnnl})
+
+```{r curvesnnl, dependson=c("graphpar2", "datnnl_l"), echo=track, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, non-linear M-based)", fig.label="fig:curvesnnl",fig.pos="p", out.width='100.0%', eval=T}
+
+curvePlot(datnnl, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (non-linear M-based)")
+```
+
+What about the `p_asy` asymmetry index of the example keywords?
+
+```{r}
+temp %>% select(keyword, zone, p_asy) %>% filter(keyword%in%kw_list)
+```
+
+
+```{r curvesEtctunnl, echo=track, results=draft, w=8, h=5, fig.cap="Keyword trajectories (data doubly normalized, non-linear M-based)", fig.label="fig:curvesEtctunnl", fig.pos="p", out.width='100.0%', eval=T}
+
+curveCtuPlot(datnnl, ctu_noun, r = 2, size_class = rep(.1,4), y_lab = "keyword (doubly normalized) frequency (non-linear M-based)")
+```
+
+
+```{r facetsnnl, echo=track, w=7.5, h=6, fig.cap="Keyword trajectories by frequency size class (data doubly normalized, non-linear M-based)", fig.label="fig:facetsnnl", fig.pos="p", out.width='100.0%', eval=T}
+
+facetPlot(datnnl, keyword_selection = list(type="list", n=3, kw.list=kw_list), r = 4, size_class = rep(.1,4), scales = "free", y_lab = "keyword (doubly normalized) frequency (non-linear M-based)")
+```
+
+
+```{r savefinal, echo=F, message=F, eval=raw}
+usethis::use_data(datnchi, kw_list, internal = T, overwrite = over)
+```
+
 

@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
 RoxygenNote: 7.3.3
 Depends: 
     R (>= 4.1.0)
-Imports: 
+Imports:
     dplyr (>= 1.0.0),
     ggplot2 (>= 3.3.0),
     tidyr (>= 1.1.0),
@@ -38,6 +38,9 @@ Imports:
     stats,
     tools
 Suggests:
+    TeachingDemos,
+    lattice,
+    usethis,
     knitr (>= 1.30),
     rmarkdown (>= 2.5),
     DT (>= 0.20),

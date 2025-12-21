@@ -2,7 +2,7 @@
 % Please edit documentation in R/smoothingSelection.R
 \name{smoothingSelection}
 \alias{smoothingSelection}
-\title{Selection of Optimal Smoothing Parameters for Chronological Keyword Curves}
+\title{Selection of Optimal Smoothing Parameters for Keyword Curves}
 \usage{
 smoothingSelection(
   data,
@@ -20,14 +20,14 @@ information, and year columns.}
 
 \item{lambda_seq}{Numeric vector of log10(lambda) values to evaluate. Defaults to \code{seq(-6, 9, 0.25)}.}
 
-\item{degrees}{Integer vector of B-spline degrees (\code{m}) to test. Defaults to \code{1:8}.}
+\item{degrees}{Integer vector of B-spline orders (\code{m}) to test. Defaults to \code{1:8}.}
 
 \item{penalty_type}{Character string indicating the type of penalization. Accepted values are:
 \itemize{
 \item \code{"m-2"}: penalize the (m-2)-th derivative (default);
-\item \code{"2"}: second derivative if \code{m > 3}, else reduced;
-\item \code{"1"}: first derivative if \code{m > 2}, else none;
-\item \code{"0"}: no penalization.
+\item \code{"2"}: second derivative if \code{m > 3}, else first derivative if \code{m = 3}, else the function itself (zero-derivative);
+\item \code{"1"}: first derivative if \code{m > 2}, else the function itself (zero-derivative);
+\item \code{"0"}: the function itself (zero-derivative).
 }}
 
 \item{normty}{Optional character string indicating the normalization type applied to the TDM
@@ -46,21 +46,21 @@ A named list with the following components:
 \item{optimal_ocv}{Subset of \code{results} containing the lambda value that minimizes OCV for each degree.}
 \item{plots}{A list of \code{ggplot} objects for \code{df}, \code{sse}, \code{gcv}, and \code{ocv} (only if \code{plot = TRUE}).}
 \item{summary_panel}{A graphical summary (grob object) of optimal smoothing for visual reporting.}
-\item{degree}{Numeric indicates the degree m}
+\item{opt_order}{The order (m) minimizing GCV and associated parameters (log10(lambda), df).}
 \item{penalty_type}{Character string of the penalization type used.}
 \item{call}{The matched call for reproducibility.}
 }
 }
 \description{
 Computes optimal smoothing parameters for term frequency curves over time using B-spline basis
-functions and penalized smoothing. The function evaluates combinations of spline degrees (\code{m})
-and smoothing parameters (\code{lambda}) under different penalty types, computing diagnostic criteria
-such as degrees of freedom (\code{df}), sum of squared errors (\code{sse}), generalized cross-validation
-(\code{gcv}), and ordinary cross-validation (\code{ocv}).
+functions and penalized smoothing. The function evaluates combinations of spline orders (\code{m})
+and smoothing parameters (\code{lambda}) under different penalty types, computing various metrics iagnostic criteria
+such as generalized cross-validation (\code{gcv}) and ordinary cross-validation (\code{ocv}) and metrics
+such as degrees of freedom (\code{df}) and sum of squared errors (\code{sse}).
 }
 \details{
-The function returns a complete set of results, including a table of diagnostics, optimal
-parameters for each degree, and optional visualizations for interpretation.
+The function returns a complete set of results, including a table of diagnostics and metrics,
+optimal parameters for each order, and optional visualizations for interpretation.
 }
 \examples{
 \dontrun{
@@ -69,7 +69,7 @@ corpus <- system.file("extdata", "corpus.csv", package = "cccc")
 data <- importData(tdm_file = tdm, corpus_file = corpus,
 sep_tdm = ";",sep_corpus_info = ";",zone="stat")
 
-data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+data_nchi <- normalization(data, normty = "nchi", sc = 1)
 
 # Run smoothing selection using default settings
 result <- smoothingSelection(data_nchi, penalty_type = "m-2")

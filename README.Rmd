@@ -139,11 +139,12 @@ p_m2$summary_panel
 ## Smoothing selection - P 2
 
 p_2 <- smoothingSelection(data_nchi,
-                            lambda_seq = NULL,
-                            degrees = NULL,
-                            penalty_type = "2",
-                            plot = TRUE,
-                            verbose = TRUE)
+                               lambda_seq = NULL,
+                               degrees = NULL,
+                               penalty_type = "2",
+                               normty = NULL,
+                               plot = TRUE,
+                               verbose = TRUE)
 
 p_2$plots
 p_2$summary_panel
@@ -170,7 +171,6 @@ p_0 <- smoothingSelection(data_nchi,
                            lambda_seq = NULL,
                            degrees = NULL,
                            penalty_type = "0",
-                           normty = "nchi",
                            plot = TRUE,
                            verbose = TRUE)
 
@@ -189,13 +189,18 @@ resSmoothing <- list("m-2" = p_m2,
 opt_res <- optimalSmoothing(resSmoothing)
 
 # Results
-opt_res$m_opt         # optimal degree
-opt_res$penalty_opt   # optimal penality
-opt_res$gcv_matrix    # GCV array
-opt_res$plots$gcv     # plots
-opt_res$plots$ocv
-opt_res$plots$df
-opt_res$plots$sse
+
+opt_res$opt_summary
+opt_res$m_opt
+opt_res$penalty_opt
+opt_res$llambda_opt
+opt_res$gcv_opt
+opt_res$top4_opt
+```
+
+```{r}
+# Optimal Smoothing selection - Plots
+opt_res$plots
 ```
 
 ```{r}
@@ -205,7 +210,7 @@ opt_res$plots$sse
 ```
 
 ```{r}
-plotSubOpt <- plotSuboptimalFits(data=data_nchi,
+plotSubOpt <- plotOptimalFits(data=data_nchi,
                                opt_res=opt_res,
                                n_curves = 9,
                                show_zone = TRUE,

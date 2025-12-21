@@ -1,0 +1,720 @@
+---
+title: "Tutorial: Functional Data Analysis (FDA)"
+author: "matilde trevisani"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    fig_width: 8
+    fig_height: 5
+    df_print: "tibble" # other options: paged, kable, default
+  # bookdown::html_document2:
+  #   fig_caption: yes
+  #   number_sections: false
+  #   base_format: rmarkdown::html_vignette
+  # bookdown::pdf_document2:
+  #   fig_caption: yes
+  #   number_sections: false
+   # highlight: espresso    # textmate  breezedark  haddock  espress monochrome  pygments
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Tutorial: Functional Data Analysis (FDA)}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r optcmd, echo=FALSE, cache=F}
+draft <- T
+track <- T
+figeval <- T
+raw <- T
+over <- T
+```
+
+```{r utils, echo=F, cache=F}
+nam_work <- "JPSP"
+namtd <- "jpsp"
+normty <- "nchi"
+normtytxt <- "chi square-like"
+```
+
+```{r setup, include=FALSE, cache=F}
+knitr::opts_chunk$set(
+  echo = track, 
+  collapse = TRUE, 
+  comment = "#>", 
+  fig.path = paste0(nam_work,'_fig/fda/',normty,'_'), 
+  fig.lp=paste0(normty,'_'),
+  cache = 2, 
+  cache.path=paste0(namtd,'_fda_',normty,'_cache/'), 
+  cache.comments = F, 
+  autodep = TRUE, 
+  cache.extra = knitr::rand_seed,
+  par = TRUE, # ??
+  fig.align = 'center',
+  crop = TRUE, # ??
+  dev = c('CairoPNG','CairoPDF'), # ??
+  fig.width = 8,
+  fig.height = 5,
+  out.width = '100%',
+  warning = track,
+  message = track
+  )
+
+# Cairo opzionale per figure di alta qualità
+if (requireNamespace("Cairo", quietly = TRUE)) {
+  knitr::opts_chunk$set(list(png = list(type = "cairo"), pdf = list(type = "cairo")))
+}
+
+knitr::opts_knit$set(aliases=c(h = 'fig.height', w = 'fig.width'), unnamed.chunk.label = "fig")
+
+
+knitr::knit_hooks$set(par=function(before, options, envir){
+  if (before && options$fig.show!='none') {
+    par(mar=c(2.,1.9,.25,.25)*sqrt(options$fig.width/6),mgp=c(1.1,.3,0)*sqrt(options$fig.width/6),tcl=-.15*sqrt(options$fig.width/6),font.main=1,cex.lab=.75*sqrt(options$fig.width/6),cex.axis=.8*sqrt(options$fig.width/6),cex.main=sqrt(options$fig.width/6),xaxs="i",yaxs="i")#default family is sans
+  }  
+})
+```
+
+```{r packages, include=FALSE, cache=F}
+# Main package
+library(cccc)
+
+# Data manipulation
+library(dplyr)
+library(tibble) 
+
+# Visualization
+library(ggplot2)
+#library(patchwork)
+library(ggpubr)
+
+# Interactive tables
+library(DT)
+
+library(fda)
+library(lattice)  # for levelplot
+library(TeachingDemos)  # for subplot()
+```
+
+# FDA
+
+## Normalization type: `r normtytxt`
+
+```{r internaldat, echo=F, results='hide', eval=raw}
+# loading the dataset is necessary only when knitting from the Rstudio.
+# instead, datnetcetc is found (as internal dataset) when building vignettes from within the package.
+#load(paste0("../data-raw/dat",normty,".rda"))
+sysdata_filenames <- load("../R/sysdata.rda")
+sysdata_filenames
+```
+
+Data consists of the time by term table of normalized frequencies (since
+this is the format required as input to `fda` routines).
+
+```{r fdautils, echo=track, include=draft, eval=T}
+if(exists(paste0("dat", normty))) {
+  cat("Dataset 'dat", normty, "' found in internal data.\n", sep = "")
+} else {
+  cat("Dataset 'dat", normty, "' not found in internal data.\n We create it.", sep = "")
+  tdm <- system.file("extdata", "tdm.csv", package = "cccc")
+  corpus <- system.file("extdata", "corpus.csv", package = "cccc")
+  data <- importData(tdm_file = tdm, corpus_file = corpus)
+  datnchi <- normalization(data, normty = "nchi", sc = 1)
+}
+
+dat <- get(paste0("dat", normty))
+ind_d <- dat$year_cols
+names(dat)
+n_zones <- length(dat$zone)
+dat <- dat$tdm
+dat %>% dplyr::select(1:ind_d[1]-1,ind_d[1:5])%>% head 
+year <- names(dat)[ind_d]
+keyword <- as.character(dat$keyword)
+mat <- t(dat[,ind_d])
+dimnames(mat) <- list(year,keyword)
+cat(nt <- nrow(mat), "time points\n")
+cat(n <- ncol(mat), "terms\n")
+cat("A subset:")
+mat[c(1:3,(nt-2):nt),c(1:3,(n-2):n)]
+```
+
+A *cubic spline smoothing*, fitted by an ordinary least squares
+estimate, is taken as the starting point. Note that we merely obtain an
+exact interpolation of data, without any smoothing effect.
+
+```{r curvespar, include=track, eval=T}
+ylab <- paste0("word (",normtytxt,") normalized frequency")
+r <- 2
+samplpo <- year %>% as.numeric
+ny <- diff(range(samplpo))+1 
+xaxlab <- (samplpo)[1]+0:(ny-1)
+xaxt <- seq(1, ny, by=r)
+xaxlab[-xaxt] <- ""
+
+xnug <- 100; xlim <- c(1,ny)+c(-1,1)*ny/xnug
+ynug <- 20; ylim <- range(mat)+c(-1,1)*diff(range(mat))/ynug
+
+lwd.u <- .35; lwd.bty.u <- 1
+col.tck.u <- "slategray4"; col.bty.u <- "slategray3"
+```
+
+The figure below show the fit of a cubic smoothing spline to the `r normtytxt` normalized data for a few selected words (top) and for all
+words (bottom).
+<!-- \@ref(fig:sat)  -->
+
+```{r sat, w=8, h=4.65, fig.cap=paste("Fit of a cubic smoothing spline to", normtytxt," normalized data."), fig.pos="p", fig.show='hold', echo=track, results='hide'}
+
+fdtime <- 1+samplpo-samplpo[1]
+br <- fdtime 
+nord <- 4
+bbasis <- create.bspline.basis(norder=nord, breaks=br)
+
+# For selected words
+k <- match(kw_list[seq(1, le=n_zones, by=3)], keyword)
+# dimnames(mat)[[2]][k]
+# keyword[k]
+
+sat <-Data2fd(fdtime, mat[, k], bbasis, fdnames = list("time", "words", "observations"))
+
+curves <- sat
+
+plot(curves, xlim=xlim, ylim=ylim, nx=ny, xaxt="n", xlab="", ylab=ylab, lwd=lwd.u*2, axes=F) 
+mtext(paste("words:",paste(keyword[k],collapse=", ")), 3, line=-1)
+axis(1, at=1:ny, labels = xaxlab, las=2, col.ticks = col.tck.u)
+axis(2)
+box(col=col.bty.u, lwd=lwd.bty.u)
+
+matpoints(1+samplpo-samplpo[1], mat[,c(k)], pch=20, cex=.75)
+
+# For all words
+sat <-Data2fd(fdtime, mat, bbasis, fdnames = list("time", "words", "observations"))
+
+curves <- sat
+
+plot(curves, xlim=xlim, ylim=ylim, nx=nt, xaxt="n", xlab="", ylab=ylab, lwd=lwd.u, axes=F)
+axis(1, at=1:ny, labels = xaxlab, las=2, col.ticks = col.tck.u)
+axis(2)
+box(col=col.bty.u, lwd=lwd.bty.u)
+```
+
+```{r my_plotfd, include=F}
+my_plotfd <- function (x, y, Lfdobj = 0, href = TRUE, titles = NULL, xlim = NULL,
+                    ylim = NULL, xlab = NULL, ylab = NULL, ask = FALSE, nx = NULL,
+                    axes = NULL, ...)
+{
+  fdobj <- x
+  if (!(is.fd(fdobj) || is.fdPar(fdobj)))
+    stop(paste("First argument is neither a functional data or a ",
+               "functional parameter object."))
+  if (is.fdPar(fdobj))
+    fdobj <- fdobj$fd
+  if (is.null(axes)) {
+    if (is.null(fdobj$basis$axes)) {
+      Axes <- TRUE
+      axFun <- FALSE
+    }
+    else {
+      if (!inherits(fdobj$basis$axes, "list"))
+        stop("fdobj$basis$axes must be a list;  ", "class(fdobj$basis$axes) = ",
+             class(fdobj$basis$axes))
+      if (!(inherits(fdobj$basis$axes[[1]], "character") ||
+            inherits(fdobj$basis$axes[[1]], "function")))
+        stop("fdobj$basis$axes[[1]] must be either a function or the ",
+             "name of a function;  class(fdobj$basis$axes[[1]]) = ",
+             class(fdobj$basis$axes[[1]]))
+      Axes <- FALSE
+      axFun <- TRUE
+      axList <- c(fdobj$basis$axes, ...)
+    }
+  }
+  else {
+    if (is.logical(axes)) {
+      Axes <- axes
+      axFun <- FALSE
+    }
+    else {
+      if (!inherits(axes, "list"))
+        stop("axes must be a logical or a list;  class(axes) = ",
+             class(axes))
+      if (!(inherits(axes[[1]], "character") || inherits(axes[[1]],
+                                                         "function")))
+        stop("axes[[1]] must be either a function or the ",
+             "name of a function;  class(axes[[1]]) = ",
+             class(axes[[1]]))
+      Axes <- FALSE
+      axFun <- TRUE
+      axList <- c(axes, ...)
+    }
+  }
+  Lfdobj <- int2Lfd(Lfdobj)
+  if (!inherits(Lfdobj, "Lfd"))
+    stop("Second argument is not a linear differential operator.")
+  coef <- fdobj$coefs
+  coefd <- dim(coef)
+  ndim <- length(coefd)
+  nbasis <- coefd[1]
+  if (is.null(nx))
+    nx <- max(c(501, 10 * nbasis + 1))
+  nrep <- coefd[2]
+  if (ndim > 2)
+    nvar <- coefd[3]
+  else nvar <- 1
+  basisobj <- fdobj$basis
+  rangex <- basisobj$rangeval
+  if (missing(y)) {
+    y <- nx
+  }
+  else {
+    if (is.numeric(y))
+      y <- as.vector(y)
+  }
+  Y <- y
+  if (length(y) == 1) {
+    if (y >= 1) {
+      y <- seq(rangex[1], rangex[2], len = round(y))
+    }
+    else {
+      stop("'y' a single number less than one.")
+    }
+  }
+  if (min(y) < rangex[1] || max(y) > rangex[2])
+    stop("Values in Y are outside the basis range.")
+  if (is.null(xlim)) {
+    xlim <- rangex
+  }
+  else {
+    rangex[1] <- max(rangex[1], xlim[1])
+    rangex[2] <- min(rangex[2], xlim[2])
+    if (length(Y) == 1)
+      y <- seq(rangex[1], rangex[2], len = round(Y))
+  }
+  fdmat <- eval.fd(y, fdobj, Lfdobj)
+  rangey <- range(fdmat)
+  if (is.null(ylim))
+    ylim <- rangey
+  fdnames = fdobj$fdnames
+  fdlabelslist = fdlabels(fdnames, nrep, nvar)
+  xlabel = fdlabelslist$xlabel
+  ylabel = fdlabelslist$ylabel
+  casenames = fdlabelslist$casenames
+  varnames = fdlabelslist$varnames
+  if (is.null(xlab))
+    xlab <- xlabel
+  if (is.null(ylab))
+    ylab <- ylabel
+  if (ndim < 2) {
+    plot(y, fdmat, type = "l", xlim = xlim, ylim = ylim,
+         xlab = xlab, ylab = ylab, axes = Axes, ...)
+    if (axFun)
+      do.call(axList[[1]], axList[-1])
+    if (zerofind(fdmat) && href)
+      abline(h = 0, lty = 2)
+  }
+  if (ndim == 2) {
+    if (!ask) {
+      matplot(y, fdmat, type = "l", xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab, axes = Axes, ...)
+      if (axFun)
+        do.call(axList[[1]], axList[-1])
+      if (zerofind(fdmat) && href)
+        abline(h = 0, lty = 2)
+    }
+    else {
+      op <- par(ask = FALSE)
+      on.exit(par(op))
+      cat("Multiple plots:  Click in the plot to advance to the next")
+      for (irep in 1:nrep) {
+        plot(y, fdmat[, irep], type = "l", xlim = xlim,
+             ylim = ylim, xlab = xlab, ylab = ylab, axes = Axes,
+             ...)
+        if (axFun)
+          do.call(axList[[1]], axList[-1])
+        if (irep < 2)
+          par(ask = ask)
+        if (!is.null(casenames))
+          title(casenames[irep])
+        else title(paste("Case", irep))
+        if (zerofind(ylim) && href)
+          abline(h = 0, lty = 2)
+      }
+    }
+  }
+  if (ndim == 3) {
+    if (!ask) {
+      for (ivar in 1:nvar) {
+        matplot(y, fdmat[, , ivar], type = "l", xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab, ask = FALSE, axes = Axes, ...)
+        if (axFun)
+          do.call(axList[[1]], axList[-1])
+        if (!is.null(varnames))
+          title(varnames[ivar])
+        else title(paste("Variable", ivar))
+        if (zerofind(ylim) && href)
+          abline(h = 0, lty = 2)
+      }
+    }
+    else {
+      op <- par(ask = FALSE)
+      on.exit(par(op))
+      cat("Multiple plots:  Click in the plot to advance to the next")
+      for (irep in 1:nrep) {
+        for (ivar in 1:nvar) {
+          plot(y, fdmat[, irep, ivar], type = "l", xlim = xlim,
+               ylim = ylim, xlab = xlab, ylab = ylab, axes = Axes,
+               ...)
+          if (axFun)
+            do.call(axList[[1]], axList[-1])
+          if (!is.null(casenames))
+            titlestr = casenames[irep]
+          else titlestr = paste("Case", irep)
+          if (!is.null(varnames)) {
+            titlestr = paste(titlestr, "  ", varnames[ivar])
+          }
+          else {
+            titlestr = paste(titlestr, "  ", "Variable",
+                             ivar)
+          }
+          title(titlestr)
+          if (zerofind(ylim) && href)
+            abline(h = 0, lty = 2)
+        }
+      }
+    }
+  }
+  "done"
+}
+
+```
+
+We can visualize the mean and the standard deviation functions.
+<!-- (Figure \ref{nchi_meanEtsd}). --> <!-- \ref{nM_meanEtsd}). -->
+
+```{r meanEtsd, dependson="curvespar", w=8, h=2.75, fig.cap=paste("Mean and Standard Deviation functions (",normtytxt," normalized data).",sep=""), fig.pos="p", fig.show='hold', echo=track, results="hide", eval=T}
+
+### summarizing functional data
+
+# the mean function
+mfd <- mean.fd(curves)
+
+my_plotfd(curves, nx=ny, xlim=xlim, ylim=ylim, col="powderblue", xaxt="n", xlab="", ylab=ylab)
+axis(1, at=1:ny, labels = xaxlab, las=2)
+
+lines(mfd, nx=ny)
+
+def.par <- par(no.readonly = TRUE) 
+nf=layout(matrix(c(rep(0,4),c(0,1,1,0),rep(0,4),rep(0,4)),byrow=T, ncol=4),heights = c(1,6,3,3),widths = c(.25,3,3,.25))
+par(new = TRUE, oma = par("mar"), fg=gray(.6), col.axis=gray(.55))
+
+plot(mfd, nx=ny, xlim=xlim, ylim=ylim,
+   xaxt="n",xlab="",ylab="",col="Darkslateblue",lwd=2)
+axis(1,at=1:ny, labels = xaxlab, las=2)
+
+par(def.par)
+
+# We can also look at the variation in the function as a pointwise process
+stdfd <- std.fd(curves)
+
+plot(stdfd, xlim=xlim, xaxt="n", xlab="", ylab="Standard Deviation",yaxs="r", axes=F)
+axis(1, at=1:ny, labels = xaxlab, las=2)
+axis(2)
+```
+
+Covariance and correlation functions may suggest any bundles of curves
+temporally related in specific time windows.
+<!-- %>%(Figure \ref{nchi_corr}). -->
+
+```{r corr, w=9, h=4, dependson="sat", fig.cap=paste("Covariance and correlation functions (",normtytxt," normalized data).",sep=""), fig.pos="p", fig.show='hold', warning=F, echo=track}
+
+varfd <- var.fd(curves)
+varvals <- eval.bifd(1:ny, 1:ny, varfd)
+
+# We can also look at the correlation
+
+corfd <- cor.fd(1:ny,curves)
+
+def.par <- par(mfrow=c(1,2), cex.axis=.7, cex.lab=.85, tcl=-.25)
+
+xylab <- "year" 
+  
+persp(1:ny, 1:ny, varvals, theta=40, phi=20, expand = .5, ticktype='detailed', nticks =14, col="orange1", xlab=xylab, ylab=xylab, zlab="covariance") # r=3, shade=.2,
+
+persp(1:ny, 1:ny, corfd, theta=40, phi=20, expand = .5, ticktype='detailed', nticks =14, col="yellow1",xlab=xylab, ylab=xylab, zlab="correlation")
+
+par(def.par)
+
+#contour(fdtime, fdtime, varvals)
+
+colRP=c("chartreuse4","white","deepskyblue4")
+mv <- max(abs(varvals))
+mc <- max(abs(corfd))
+rl <- 4; rt <- 2
+
+atxr <- seq(1,ny,by=rt)
+labelsxr <- (as.numeric(samplpo[1])+0:(ny-1))[atxr]
+xaxt <- seq(1, ny, by=rl)
+labelsxr[-xaxt] <- ""
+
+cexax <- .85; tck <- .75; cexlab <- .95
+
+m <- mv
+p1 <- levelplot(x=varvals,contour=TRUE,labels=FALSE,scales=list(at=atxr,labels=labelsxr,x=list(rot=90),cex=cexax,tck=tck),at=do.breaks(c(-m,m),21),col.regions=colorRampPalette(colRP),xlab=list(xylab,cex=cexlab),ylab=list(xylab,cex=cexlab),colorkey=list(width=.75))
+
+m <- mc
+p2 <- levelplot(x=corfd,scales=list(labels=labelsxr,at=atxr,x=list(rot=90),cex=cexax,tck=tck),at=do.breaks(c(-m,m),21),col.regions=colorRampPalette(colRP),xlab=list(xylab,cex=cexlab),ylab=list(xylab,cex=cexlab),colorkey=list(width=.75))
+
+wi <- 2.75
+print(p1, position = c(0, 0, 0.5, 1), more = TRUE, panel.width=list(x=wi, units="in"), panel.height=list(x=wi-1.,units="in"))
+print(p2, position = c(0.5, 0, 1, 1), panel.width=list(x=wi, units="in"), panel.height=list(x=wi-1.,units="in"))
+
+```
+
+## Smoothing selection
+
+By the roughness penalty approach for estimation, we smoothed the data
+by trying different spline orders ($m$ from $1$ to $8$), with
+$\text{PEN}_{m-2}(x) =\int[D^{m-2}x(s)]^2 ds$ as a roughness penalty,
+and varying the smoothing parameter over an opportune range of values
+($\log_{10}\lambda$ from $-6$ to $9$).
+<!-- (Figure \ref{nchi_selection}). --> <!-- \ref{nchi_selection}). -->
+
+If the aim is comparing different normalizations, we can create an object apt to contain the selection output for the all types of normalizations under examination.
+(However, if you are solely interested in the selection output for the current normalization, you can skip this preliminary setting.)
+
+
+### PEN$_{m-2}$
+
+
+```{r selection_m2, fig.show='hold', fig.cap=paste("Smoothing selection using PEN$_{m-2}$ (",normtytxt," normalized data).",sep=""), fig.pos="p", w=4, h=3, echo=track, warning=F}
+
+p_m2 <- smoothingSelection(
+                      datnchi,
+                      lambda_seq = NULL,
+                      degrees = NULL,
+                      penalty_type = "m-2",
+                      plot = TRUE,
+                      verbose = TRUE)
+```
+
+```{r optpar_m2, dependson="selection_m2", echo=track}
+names(p_m2)
+# options(tibble.print_min = Inf)
+# p_m2$results
+p_m2$summary_optimal
+p_m2$optimal_gcv
+p_m2$optimal_ocv
+p_m2$opt_order
+p_m2$penalty_type
+
+p_m2$plots$df 
+
+modified_plots <- lapply(p_m2$plots, function(x) {
+  x + theme(axis.title.x = element_text(vjust = 6.5, hjust = 1))
+})
+
+ggarrange(modified_plots$df, modified_plots$sse, modified_plots$ocv, modified_plots$gcv, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+
+p_m2$summary_panel
+```
+
+With $\text{PEN}_{m-2}(x)$, according to the GCV measure, the minimizing $m$ turns out to be
+`r p_m2$opt_order$degree` with $\lambda=$ `r round(10^p_m2$opt_order$log_lambda,2)`
+for which $\text{df}(\lambda)=$ `r round(p_m2$opt_order$df,2)`.
+<!-- (Figure \ref{nchi_selection}, bottom-right panel). -->
+<!-- <!-- (Figure \ref{nM_selection}, bottom-right panel). --> 
+
+### PEN$_{2}$
+
+We repeat the smoothing by posing
+$\text{PEN}_{2}(x) =\int[D^{2}x(s)]^2 ds$ for each $m>3$ leaving
+unaltered the other penalizations (Note: R routine `smooth.basis` gives
+error posing `Lfd=1` with $m=2$ and `Lfd=2` with $m=3$, that is
+penalizing a derivative consisting of a step function.) 
+<!-- Figure \ref{nchi_selection2}). -->
+
+
+```{r selection_2, fig.show='hold', fig.cap=paste("Smoothing selection using PEN$_{2}$ (",normtytxt," normalized data).",sep=""), fig.pos="p", w=4, h=3, echo=track}
+
+p_2 <- smoothingSelection(
+                      datnchi,
+                      lambda_seq = NULL,
+                      degrees = NULL,
+                      penalty_type = "2",
+                      plot = TRUE,
+                      verbose = TRUE)
+```
+
+```{r optpar_2, dependson="selection_2", echo=track}
+p_2$summary_optimal
+p_2$optimal_gcv
+p_2$optimal_ocv
+p_2$opt_order
+
+p_2$plots$df 
+
+modified_plots <- lapply(p_2$plots, function(x) {
+  x + theme(axis.title.x = element_text(vjust = 6.5, hjust = 1))
+})
+
+ggarrange(modified_plots$df, modified_plots$sse, modified_plots$ocv, modified_plots$gcv, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+
+p_2$summary_panel
+```
+
+With $\text{PEN}_{2}(x)$, according to the GCV measure, the minimizing $m$ results `r p_2$opt_order$degree` with $\lambda=$
+`r round(10^p_2$opt_order$log_lambda,2)` for which $\text{df}(\lambda)=$
+`r round(p_2$opt_order$df,2)`.
+<!-- (Figure \ref{nchi_selection2}, bottom-right panel). -->
+
+Lastly, we try with $\text{PEN}_{1}(x) =\int[Dx(s)]^2 ds$ for each $m>2$
+and $\text{PEN}_{0}(x) =\int[D^0x(s)]^2 ds=\int[x(s)]^2 ds$ for every $m$. 
+<!-- (Figures \ref{nchi_selection1} and \ref{nchi_selection0}). -->
+
+### PEN$_{1}$
+
+```{r selection_1, fig.show='hold', fig.cap=paste("Smoothing selection using PEN$_{1}$ (",normtytxt," normalized data).",sep=""), fig.pos="p", w=4, h=3, echo=track}
+
+p_1 <- smoothingSelection(
+                      datnchi,
+                      lambda_seq = NULL,
+                      degrees = NULL,
+                      penalty_type = "1",
+                      plot = TRUE,
+                      verbose = FALSE)
+```
+
+```{r optpar_1, dependson="selection_1", echo=track}
+p_1$summary_optimal
+p_1$optimal_gcv
+p_1$optimal_ocv
+p_1$opt_order
+
+p_1$plots$df 
+
+modified_plots <- lapply(p_1$plots, function(x) {
+  x + theme(axis.title.x = element_text(vjust = 6.5, hjust = 1))
+})
+
+ggarrange(modified_plots$df, modified_plots$sse, modified_plots$ocv, modified_plots$gcv, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+
+p_1$summary_panel
+```
+
+### PEN$_{0}$
+
+
+```{r selection_0, fig.show='hold', fig.cap=paste("Smoothing selection using PEN$_{0}$ (",normtytxt," normalized data).",sep=""), fig.pos="p", w=4, h=3, echo=track}
+
+p_0 <- smoothingSelection(
+                      datnchi,
+                      lambda_seq = NULL,
+                      degrees = NULL,
+                      penalty_type = "0",
+                      plot = TRUE,
+                      verbose = FALSE)
+```
+
+```{r optpar_0, dependson="selection_0", echo=track}
+p_0$summary_optimal %>% dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 6)))
+p_0$optimal_gcv
+p_0$optimal_ocv
+p_0$opt_order
+
+p_0$plots$df 
+
+modified_plots <- lapply(p_0$plots, function(x) {
+  x + theme(axis.title.x = element_text(vjust = 6.5, hjust = 1))
+})
+ggarrange(modified_plots$df, modified_plots$sse, modified_plots$ocv, modified_plots$gcv, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+
+p_0$summary_panel
+```
+
+In these last cases, the minimizing value is $m=$ `r p_1$opt_order$degree` and $m=$
+`r p_0$opt_order$degree` respectively, (with $\text{Pen}_1$, $\lambda=$
+`r round(10^p_1$opt_order$log_lambda,2)` for which $\text{df}(\lambda)=$
+`r round(p_1$opt_order$df,2)`, with $\text{Pen}_0$, $\lambda=$
+`r round(10^p_0$opt_order$log_lambda,2)` for which $\text{df}(\lambda)=$
+`r round(p_0$opt_order$df,2)`).
+
+### Optimal smoothing
+
+```{r optimalsmoothing, fig.show='hold', fig.cap=paste("Optimal smoothing comparison for different roughness penalties (",normtytxt," normalized data).",sep=""), fig.pos="p", echo=track}
+
+resSmoothing <- list("m-2" = p_m2,
+                     "2"   = p_2,
+                     "1"   = p_1,
+                     "0"   = p_0)
+
+opt_res <- optimalSmoothing(resSmoothing)
+
+# Results
+#old <- options(pillar.sigfig = 6)
+opt_res$opt_summary %>% print   # optimal values for all penalties
+#options(old)
+opt_res$penalty_opt   # optimal penalty type
+opt_res$m_opt         # optimal order
+opt_res$llambda_opt   # optimal log10(lambda)
+opt_res$top4_opt
+opt_res$plots$lLambda # plots
+opt_res$plots$df
+opt_res$plots$sse
+opt_res$plots$gcv
+```
+
+```{r optimalsmoothing_plot, dependson=c("optimalsmoothing"), fig.show='hold', fig.cap=paste("Optimal smoothing comparison plots for different roughness penalties (",normtytxt," normalized data).",sep=""), fig.pos="p", echo=track}
+modified_plots <- lapply(opt_res$plots, function(x) {
+  x + xlab("m") + theme(
+    plot.title = element_blank(),
+    axis.title.x = element_text(vjust = 6.5, hjust = 0)
+  )
+})
+
+ggarrange(modified_plots$lLambda, modified_plots$df, modified_plots$sse, modified_plots$gcv, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+```
+
+In conclusion, the minimum GCV is achieved by setting $m=$ `r opt_res$m_opt` with
+$\text{PEN}_{`r opt_res$penalty_opt`}$ roughness penalty
+(note that for the top-4 types of penalizations,  `r opt_res$top4_opt`, the gcvs are almost identical or very close).
+
+Optimal smoothing is illustrated below.
+<!-- (Figures \ref{nchi_opt_fd}-\ref{nchi_opt_fit}). -->
+<!-- \ref{nchi_opt_fd}-\ref{nchi_opt_fit}). -->
+
+```{r optimal_fd, w=8, h=4.65, fig.cap=paste("Fit of the optimal smoothing spline to ",normtytxt," normalized data.",sep=""), echo=track, eval=T}
+
+plot_opt <- plotOptimalSmoothing(datnchi, opt_result = opt_res, nx=F)
+plot_opt$plot
+```
+
+
+```{r optimal_fit, dependson=c("fdautils","optimal_fd"), w=4, h=4.25, out.width='65%', fig.cap=paste("A selection of fitted curves according to increasing RMS residual. Fit of the optimal smoothing spline to ",normtytxt," normalized data.",sep=""), fig.pos="p", echo=track,  message = F, eval=T}
+
+plotOptFit <- plotOptimalFits(data=datnchi,
+                              smoothed = plot_opt$smoothed,
+                              #opt_res=opt_res,
+                              n_curves = 9,
+                              show_zone = TRUE,
+                              graph = FALSE)
+plotOptFit$combinedKeywordPlot #%>% suppressWarnings(print())
+#> $singleKeywordPlot
+# Best and worst fitted curves
+plotOptFit$singleKeywordPlot$effect #%>% suppressWarnings(print())
+plotOptFit$singleKeywordPlot$riski #%>% suppressWarnings(print())
+```
+
+```{r savefinal_b, echo=F, message=F, eval=raw}
+# save the smooth values (on fdtime) for internal use
+nam <- paste0("smooth", normty)
+assign(nam, plot_opt$smooth_vals)
+# over must be TRUE to update internal data, but if it is TRUE it cancels existing objects without warning
+# over <- T
+# smoothnchi <- get(nam)
+# usethis::use_data(smoothnchi, internal = T, overwrite = over)
+# Then, we may use the following to save it in sysdata.rda
+# OR, I can save it in data-raw/ and load it when necessary
+save(list=nam, file=paste0("../data-raw/",nam,".rda"))
+# OR, I can save it together with the objects in sysdata.rda
+usethis::use_data(datnchi, kw_list, smoothnchi, internal = T, overwrite = over)
+```
