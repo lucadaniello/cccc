@@ -47,7 +47,6 @@ curve <- curvePlot(data = data,
                    r = 1,
                    themety = "light",
                    size_class = NULL,
-                   x_leg = 0.85,
                    x_lab = "years"
 )
 curve
@@ -72,25 +71,25 @@ head(data_nc$tdm, n=10)
 
 ```{r}
 ## chi-square type normalization
-data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+data_nchi <- normalization(data, normty = "nchi")
 head(data_nchi$tdm, n=10)
 ```
 
 ```{r}
 ## max per row
-data_nM <- normalization(data, normty = "nM", sc = 1000)
+data_nM <- normalization(data, normty = "nM")
 head(data_nM$tdm, n=10)
 ```
 
 ```{r}
 ## min-max per row
-data_nmM <- normalization(data, normty = "nmM", sc = 1000)
+data_nmM <- normalization(data, normty = "nmM")
 head(data_nmM$tdm, n=10)
 ```
 
 ```{r}
 ## nonlinear normalization (based on asymmetry)
-data_nnl <- normalization(data, normty = "nnl", sc = 1000, nnlty="CT")
+data_nnl <- normalization(data, normty = "nnl", nnlty="V")
 head(data_nnl$p_asy, n=10)
 
 head(data_nnl$tdm, n=10)
@@ -111,16 +110,16 @@ curve_nchi <- curvePlot(data = data_nchi,
            r = 1,
            themety = "light",
            size_class = NULL,
-           x_leg = 0.85,
            x_lab = "years"
 )
 curve_nchi
 ```
 
 ```{r}
-facet_plot <- facetPlot(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
-                       r = 4, scales = "free", leg = TRUE, themety = "light",
-                       size_class = NULL, x_lab = "year")
+facet_plot <- facetPlot(data_nchi,
+   keyword_selection = list(type = "frequency", n = 3),
+   r = 4,
+   scales = "free")
 facet_plot
 ```
 
@@ -140,11 +139,12 @@ p_m2$summary_panel
 ## Smoothing selection - P 2
 
 p_2 <- smoothingSelection(data_nchi,
-                            lambda_seq = NULL,
-                            degrees = NULL,
-                            penalty_type = "2",
-                            plot = TRUE,
-                            verbose = TRUE)
+                               lambda_seq = NULL,
+                               degrees = NULL,
+                               penalty_type = "2",
+                               normty = NULL,
+                               plot = TRUE,
+                               verbose = TRUE)
 
 p_2$plots
 p_2$summary_panel
@@ -171,7 +171,6 @@ p_0 <- smoothingSelection(data_nchi,
                            lambda_seq = NULL,
                            degrees = NULL,
                            penalty_type = "0",
-                           normty = "nchi",
                            plot = TRUE,
                            verbose = TRUE)
 
@@ -190,13 +189,18 @@ resSmoothing <- list("m-2" = p_m2,
 opt_res <- optimalSmoothing(resSmoothing)
 
 # Results
-opt_res$m_opt         # optimal degree
-opt_res$penalty_opt   # optimal penality
-opt_res$gcv_matrix    # GCV array
-opt_res$plots$gcv     # plots
-opt_res$plots$ocv
-opt_res$plots$df
-opt_res$plots$sse
+
+opt_res$opt_summary
+opt_res$m_opt
+opt_res$penalty_opt
+opt_res$llambda_opt
+opt_res$gcv_opt
+opt_res$top4_opt
+```
+
+```{r}
+# Optimal Smoothing selection - Plots
+opt_res$plots
 ```
 
 ```{r}
@@ -206,7 +210,7 @@ opt_res$plots$sse
 ```
 
 ```{r}
-plotSubOpt <- plotSuboptimalFits(data=data_nchi,
+plotSubOpt <- plotOptimalFits(data=data_nchi,
                                opt_res=opt_res,
                                n_curves = 9,
                                show_zone = TRUE,

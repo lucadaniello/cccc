@@ -1,19 +1,19 @@
 #' Import Term Document Matrix and Corpus Information
 #'
 #' This function reads and processes a Term Document Matrix (TDM) and corpus information from CSV or Excel files.
-#' It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword,
+#' It standardizes the format, renames columns, cleans keywords, computes total frequency per keyword (by which it reorders the TDM),
 #' and classifies terms into frequency zones. It also creates a column representing
 #' the frequency interval associated with each zone.
 #'
 #' @param tdm_file Character. Path to the term-document matrix file (CSV or Excel).
 #'
 #' tdm_file description:
-#' - The first column must contain the list of terms, while all other columns must be labeled with the corresponding years.
+#' - The first column must contain the list of terms, while all other columns must be labeled with the corresponding years (or other time-points of reference).
 #'
 #' @param corpus_file Character. Path to the corpus information file (CSV or Excel).
 #'
 #' Corpus_file description:
-#' - The first column must contain the list of years.
+#' - The first column must contain the year (or other time-point).
 #' - The second column the total number of tokens per year.
 #' - The third column the number of documents per year.
 #' - The fourth column (if present) any additional metadata.
@@ -38,10 +38,16 @@
 #'     \code{dimCorpus} (total number of tokens),
 #'     \code{nDoc} (number of documents),
 #'     and optionally \code{metadata} (additional information).}
+#'   \item{tdm_long}{A tibble in long format containing the following columns:
+#'     \code{keyword}, \code{year}, \code{cont} (contiguous time index),
+#'     \code{chrono} (chronological index starting from 1), \code{freq} (keyword frequency),
+#'     \code{tot_freq}, \code{int_freq}, and \code{zone}.}
 #'   \item{norm}{Logical. Indicates whether the term-document matrix has been normalized (default is \code{FALSE}).}
 #'   \item{year_cols}{Numeric vector indicating which columns in the TDM refer to yearly frequencies.}
-#'   \item{zone}{Character vector of unique frequency zones used.}
-#'   \item{colors}{Character vector of default colors associated with zones.}
+#'   \item{zone}{Character vector of unique frequency zones used (ordered from highest to lowest frequency).}
+#'   \item{int_freq}{Character vector of unique frequency intervals in the format \code{"[min-max]"} for each zone.}
+#'   \item{colors_light}{Character vector of light color palette for zones (for plotting with light themes).}
+#'   \item{colors_dark}{Character vector of dark color palette for zones (for plotting with dark themes).}
 #' }
 #'
 #' @examples
@@ -71,7 +77,8 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
     rename(keyword = 1) %>%
     mutate(across(all_of(year_cols), as.numeric),
            keyword = str_replace_all(keyword, "\\?", ""),
-           tot_freq = rowSums(across(all_of(year_cols)), na.rm = TRUE))
+           tot_freq = rowSums(across(all_of(year_cols)), na.rm = TRUE)) %>%
+    arrange(desc(tot_freq))
 
   if (verbose) {
     n_missing <- sum(is.na(select(tdm, all_of(year_cols))))
@@ -82,19 +89,20 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
 
   switch(zone,
          stat={
-           Q <- quantile(-tdm$tot_freq, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+           Q <- quantile(tdm$tot_freq, probs = seq(0,1, by=0.25), na.rm = TRUE)
 
            # Zone variable - quartile distribution
-           tdm$zone <- cut(-tdm$tot_freq,
+           tdm$zone <- cut(tdm$tot_freq,
                           breaks = Q,
                           include.lowest = TRUE,
-                          labels = c("VH", "H", "L", "VL"))
+                          labels = c("VL", "L", "H", "VH"))
+           tdm$zone <- factor(tdm$zone, levels = c("VH", "H", "L", "VL"))
          },
          ling={
            tdm <- tdm %>% arrange(desc(tot_freq))
            freq_vector <- tdm$tot_freq
 
-           high_limit <- which(duplicated(freq_vector))[1] - 1
+           high_limit <- which(duplicated(freq_vector))[1] - 2
            if (is.na(high_limit)) high_limit <- 1
 
            sorted_unique <- sort(unique(freq_vector))
@@ -126,12 +134,17 @@ importData <- function(tdm_file, corpus_file, sep_tdm =";", sep_corpus_info = ";
   if (ncol(corpus_info) == 4) names(corpus_info)[4] <- "metadata"
 
 
-  data <- list(tdm = tdm, corpus_info = corpus_info, norm=FALSE,
+  data <- list(tdm = tdm,
+               corpus_info = corpus_info,
+               norm=FALSE,
                year_cols = grep("\\d", names(tdm)),
                zone=unique(tdm$zone),
+               int_freq=unique(tdm$int_freq),
                colors_light=colorlist(type="light")[1:length(unique(tdm$zone))],
                colors_dark=colorlist(type="dark")[1:length(unique(tdm$zone))])
+
   data <- tdm2long(data)
+
   return(data)
 }
 

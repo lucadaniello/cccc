@@ -12,7 +12,9 @@ facetPlot(
   leg = TRUE,
   themety = "light",
   size_class = NULL,
-  x_lab = "year"
+  size_kw = NULL,
+  x_lab = "year",
+  y_lab = NULL
 )
 }
 \arguments{
@@ -35,7 +37,11 @@ facetPlot(
 
 \item{size_class}{Optional numeric vector. Specifies the relative thickness of lines by zone. Defaults are assigned if not provided.}
 
+\item{size_kw}{Optional value. Specifies the relative thickness of lines of keywords. A default value is assigned if not provided.}
+
 \item{x_lab}{Character. Label for the x-axis. Defaults to \code{"year"} but can be customized (e.g., \code{"year/volume"}).}
+
+\item{y_lab}{Character. Label for y-axis (default = "keyword frequency" or "keyword (normalized) frequency").}
 }
 \value{
 A \code{ggplot} object showing smoothed or raw frequency curves of selected keywords, grouped by zone.

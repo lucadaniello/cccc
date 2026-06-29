@@ -11,17 +11,18 @@ optimalSmoothing(smoothing_results, plot = TRUE)
 to a penalty type (\code{"m-2"}, \code{"2"}, \code{"1"}, \code{"0"}).}
 
 \item{plot}{Logical. If \code{TRUE} (default), returns \code{ggplot2}-based visualizations comparing the smoothing
-statistics across penalty types and degrees.}
+statistics across penalty types and orders}
 }
 \value{
 A list containing:
 \describe{
-\item{optSmoothing}{A list with all data regarding the optimal penalty type resulted by \code{\link[=smoothingSelection]{smoothingSelection()}}}
+\item{opt_summary}{A list with all data regarding the optimal penalty type resulted by \code{\link[=smoothingSelection]{smoothingSelection()}}}
 \item{m_opt}{Integer. Optimal spline degree minimizing GCV across all penalties.}
 \item{penalty_opt}{Character. The optimal penalty type (one of \code{"m-2"}, \code{"2"}, \code{"1"}, \code{"0"}).}
-\item{lambda_opt}{Numeric. The optimal log10(lambda) value corresponding to the selected spline degree and penalty.}
-\item{gcv_matrix}{Numeric matrix of GCV values. Rows correspond to penalty types, columns to spline degrees.}
-\item{plots}{(Optional) A named list of \code{ggplot} objects for \code{gcv}, \code{ocv}, \code{df}, and \code{sse}, if \code{plot = TRUE}.}
+\item{llambda_opt}{Numeric. The optimal log10(lambda) value corresponding to the selected spline order and penalty.}
+\item{gcv_opt}{Numeric matrix of GCV values. Rows correspond to penalty types, columns to spline orders.}
+\item{top4_opt}{Numeric matrix of GCV values. Rows correspond to penalty types, columns to spline orders.}
+\item{plots}{(Optional) A named list of \code{ggplot} objects for \code{log10(lambda)}, \code{df}, \code{sse}, and \code{gcv} if \code{plot = TRUE}.}
 \item{call}{The matched function call, useful for reproducibility.}
 }
 }

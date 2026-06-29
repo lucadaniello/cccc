@@ -1,8 +1,8 @@
 Package: cccc
 Title: Chronological Corpora Curve Clustering
 Version: 0.0.0.9000
-Authors@R:c(
-    person(given = "Matile",
+Authors@R: c(
+    person(given = "Matilde",
            family = "Trevisani",
            role = c("aut"),
            email = "matilde.trevisani@deams.units.it"),
@@ -17,23 +17,37 @@ Description: Tools for analyzing and visualizing the temporal evolution of terms
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("rd", "namespace", "collate"))
-RoxygenNote: 7.3.2
-Imports: 
-    dplyr,
-    ggnewscale,
-    ggplot2,
-    readr,
-    readxl,
-    stringr,
-    tidyr,
-    fda,
-    purrr,
-    tibble,
-    patchwork,
-    RColorBrewer,
-    aricode,
-    clusterCrit,
-    clusterSim
-Suggests: 
-    rmarkdown,
-    knitr
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 4.1.0)
+Imports:
+    dplyr (>= 1.0.0),
+    ggplot2 (>= 3.3.0),
+    tidyr (>= 1.1.0),
+    tibble (>= 3.0.0),
+    stringr (>= 1.4.0),
+    readr (>= 1.4.0),
+    readxl (>= 1.3.0),
+    purrr (>= 0.3.0),
+    fda (>= 5.1.0),
+    clusterCrit (>= 1.2.0),
+    aricode (>= 1.0.0),
+    RColorBrewer (>= 1.1-2),
+    ggnewscale (>= 0.4.0),
+    patchwork (>= 1.1.0),
+    stats,
+    tools
+Suggests:
+    TeachingDemos,
+    lattice,
+    usethis,
+    knitr (>= 1.30),
+    rmarkdown (>= 2.5),
+    DT (>= 0.20),
+    Cairo (>= 1.5-12),
+    testthat (>= 3.0.0),
+    clusterSim (>= 0.49),
+    magrittr (>= 2.0.0),
+    ggpubr (>= 0.4.0)
+VignetteBuilder: knitr
+

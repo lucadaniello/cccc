@@ -1,24 +1,24 @@
-#' Selection of Optimal Smoothing Parameters for Chronological Keyword Curves
+#' Selection of Optimal Smoothing Parameters for Keyword Curves
 #'
 #' Computes optimal smoothing parameters for term frequency curves over time using B-spline basis
-#' functions and penalized smoothing. The function evaluates combinations of spline degrees (`m`)
-#' and smoothing parameters (`lambda`) under different penalty types, computing diagnostic criteria
-#' such as degrees of freedom (`df`), sum of squared errors (`sse`), generalized cross-validation
-#' (`gcv`), and ordinary cross-validation (`ocv`).
+#' functions and penalized smoothing. The function evaluates combinations of spline orders (`m`)
+#' and smoothing parameters (`lambda`) under different penalty types, computing various metrics iagnostic criteria
+#' such as generalized cross-validation (`gcv`) and ordinary cross-validation (`ocv`) and metrics
+#' such as degrees of freedom (`df`) and sum of squared errors (`sse`).
 #'
-#' The function returns a complete set of results, including a table of diagnostics, optimal
-#' parameters for each degree, and optional visualizations for interpretation.
+#' The function returns a complete set of results, including a table of diagnostics and metrics,
+#' optimal parameters for each order, and optional visualizations for interpretation.
 #'
 #' @param data A list returned by [importData()], containing the term-document matrix, corpus
 #'   information, and year columns.
 #' @param lambda_seq Numeric vector of log10(lambda) values to evaluate. Defaults to `seq(-6, 9, 0.25)`.
-#' @param degrees Integer vector of B-spline degrees (`m`) to test. Defaults to `1:8`.
+#' @param degrees Integer vector of B-spline orders (`m`) to test. Defaults to `1:8`.
 #' @param penalty_type Character string indicating the type of penalization. Accepted values are:
 #'   \itemize{
 #'     \item `"m-2"`: penalize the (m-2)-th derivative (default);
-#'     \item `"2"`: second derivative if `m > 3`, else reduced;
-#'     \item `"1"`: first derivative if `m > 2`, else none;
-#'     \item `"0"`: no penalization.
+#'     \item `"2"`: second derivative if `m > 3`, else first derivative if `m = 3`, else the function itself (zero-derivative);
+#'     \item `"1"`: first derivative if `m > 2`, else the function itself (zero-derivative);
+#'     \item `"0"`: the function itself (zero-derivative).
 #'   }
 #' @param normty Optional character string indicating the normalization type applied to the TDM
 #'   (used only for labeling results).
@@ -33,7 +33,7 @@
 #'   \item{optimal_ocv}{Subset of `results` containing the lambda value that minimizes OCV for each degree.}
 #'   \item{plots}{A list of `ggplot` objects for `df`, `sse`, `gcv`, and `ocv` (only if `plot = TRUE`).}
 #'   \item{summary_panel}{A graphical summary (grob object) of optimal smoothing for visual reporting.}
-#'   \item{degree}{Numeric indicates the degree m}
+#'   \item{opt_order}{The order (m) minimizing GCV and associated parameters (log10(lambda), df).}
 #'   \item{penalty_type}{Character string of the penalization type used.}
 #'   \item{call}{The matched call for reproducibility.}
 #' }
@@ -49,7 +49,7 @@
 #' data <- importData(tdm_file = tdm, corpus_file = corpus,
 #' sep_tdm = ";",sep_corpus_info = ";",zone="stat")
 #'
-#' data_nchi <- normalization(data, normty = "nchi", sc = 1000)
+#' data_nchi <- normalization(data, normty = "nchi", sc = 1)
 #'
 #' # Run smoothing selection using default settings
 #' result <- smoothingSelection(data_nchi, penalty_type = "m-2")
@@ -69,7 +69,7 @@ smoothingSelection <- function(data,
   if (is.null(normty)){
     normty <- data$normty
   }else{
-    normty <- ""
+    normty <- "" ## Warning: normty provided by user, ignore data$normty, but it is empty
   }
 
   # Set default range for log(lambda) and spline degrees
@@ -95,7 +95,7 @@ smoothingSelection <- function(data,
 
   # Loop over spline degrees to compute smoothing statistics
   for (m in degrees) {
-    if (verbose) message("Processing degree m = ", m)
+    if (verbose) message("Processing order m = ", m)
 
     # Create B-spline basis for current degree
     basis <- fda::create.bspline.basis(breaks = fdtime, norder = m)
@@ -139,12 +139,13 @@ smoothingSelection <- function(data,
   }
 
   # Combine all results into a single tibble
-  res_tbl <- dplyr::bind_rows(results) %>%
-    dplyr::mutate(dplyr::across(where(is.numeric), round, 6))
+  res_tbl <- dplyr::bind_rows(results)
+  # %>% dplyr::mutate(dplyr::across(where(is.numeric), round, 6))
+  # now deprecated, change to
+  # dplyr::mutate(dplyr::across(dplyr::where(is.numeric), ~ round(.x, 6)))
 
   # Identify optimal GCV values for each degree (first minimum found)
   opt_gcv <- res_tbl %>%
-    arrange(degree, lambda) %>%
     group_by(degree) %>%
     filter(gcv == min(gcv, na.rm = TRUE)) %>%
     slice(1) %>%
@@ -177,17 +178,22 @@ smoothingSelection <- function(data,
             title = paste("Smoothing Selection:", toupper(stat)),
             x = expression(log[10](lambda)),
             y = stat,
-            color = "Degree (m)"
+            color = "order (m)"
           ) +
           ggplot2::theme_minimal(base_size = 11) +
-          ggplot2::theme(legend.position = "bottom")
+          ggplot2::theme(legend.position = "bottom", legend.key.spacing.y = unit(0, "pt")) +
+          ggplot2::theme(plot.margin = unit(c(0.125,0.0,0.0,0.1), "line"))
       }
     )
     names(plot_list) <- c("df", "sse", "gcv", "ocv")
   }
 
   # Create compact summary panel for reporting
-  summary_panel <- make_summary_panel(summary_opt, penalty_type, normty)
+  summary_panel <- make_summary_panel(summary_opt, opt_gcv, opt_ocv, penalty_type, normty)
+
+  # Extract optimal degree based on GCV and, given that, the lambda value
+  opt_order <- opt_gcv %>% dplyr::select(degree, log_lambda, df, gcv) %>%
+    dplyr::arrange(gcv) %>% dplyr::slice(1) %>% cbind(penalty_type, normty)
 
   # Return all relevant results in a structured list
   return(res = list(
@@ -197,7 +203,7 @@ smoothingSelection <- function(data,
     optimal_ocv = opt_ocv,
     plots = plot_list,
     summary_panel = summary_panel,
-    degree = m,
+    opt_order = opt_order,
     penalty_type = penalty_type,
     call = match.call()
   ))

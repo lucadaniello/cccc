@@ -14,7 +14,9 @@
 #' @param leg Logical. Whether to display the legend (\code{TRUE} by default).
 #' @param themety Character. Theme type: \code{"light"} (default) or \code{"dark"}.
 #' @param size_class Optional numeric vector. Specifies the relative thickness of lines by zone. Defaults are assigned if not provided.
+#' @param size_kw Optional value. Specifies the relative thickness of lines of keywords. A default value is assigned if not provided.
 #' @param x_lab Character. Label for the x-axis. Defaults to \code{"year"} but can be customized (e.g., \code{"year/volume"}).
+#' @param y_lab Character. Label for y-axis (default = "keyword frequency" or "keyword (normalized) frequency").
 #'
 #' @return A \code{ggplot} object showing smoothed or raw frequency curves of selected keywords, grouped by zone.
 #'
@@ -35,23 +37,34 @@
 
 
 facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.list=NULL),
-                       r = 4, scales = "fixed", leg = TRUE, themety = "light",
-                       size_class = NULL, x_lab = "year"){
-  y_lab <- ifelse(data$norm, "keyword (normalized) frequency", "keyword frequency")
+                      r = 4, scales = "fixed", leg = TRUE, themety = "light",
+                      size_class = NULL, size_kw = NULL, x_lab = "year",
+                      y_lab = NULL) {
 
   zone_levels <- levels(data$zone)
   n_zones <- length(zone_levels)
 
   m <- keyword_selection$n
 
+  # Set y-axis label based on normalization if not provided
+  if (is.null(y_lab)) {
+    y_lab <- if (data$norm) {
+      "keyword (normalized) frequency"
+    } else {
+      "keyword frequency"
+    }
+  }
+
   if(themety=="light") {
     col_class <- setNames(data$colors_light, zone_levels)
-    if(is.null(size_class)) size_class <- c(.35,.35,.2,.1)
+    if(is.null(size_class)) size_class <- rep(0.1,4)[1:n_zones]
   } else {
     col_class <- setNames(data$colors_dark, zone_levels)
+    if(is.null(size_class)) size_class <- rep(0.2,4)[1:n_zones]
   }
   col_class <- paste0(col_class, "70") # alpha
-  col_kw <- colorlist(type=themety)[n_zones + seq(1, m)]
+  col_kw <- colorlist(type=themety)[n_zones + ifelse(n_zones==4, 0, 1) + seq(1, m)]
+  if (is.null(size_kw)) size_kw <- 0.7
 
   d <- data$tdm_long
 
@@ -108,8 +121,7 @@ facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.l
   # Imposta l’ordine manuale
   kw_df$keyword <- factor(kw_df$keyword, levels = ordered_keywords)
 
-  year <- data$corpus_info %>%  select(years) %>% pull() %>% unique()
-  n_d <- length(year)
+  year <- d$year %>% unique %>% as.numeric
   n_y <- diff(range(year))+1
   xaxlab <- year[1]+0:(n_y-1)
   xaxlab[-seq(1, n_y, by=r)] <- ""
@@ -149,15 +161,21 @@ facetPlot <- function(data, keyword_selection = list(type="frequency", n=3, kw.l
   if(scales=="fixed"){
     p <- p +
       facet_wrap(~zone,nrow=2) +
-      geom_line(data = d, aes(colour = zone), size = .1) +
-      geom_line(data = kw_df, aes(colour = keyword)) +
-      scale_color_manual(values = all_colors)
+      geom_line(data = d, aes(colour = zone, linewidth = zone)) +
+      geom_line(data = kw_df, aes(colour = keyword), linewidth = size_kw) +
+      scale_color_manual(values = all_colors) +
+      guides(color = guide_legend(override.aes = list(alpha = 1))) +
+      scale_linewidth_manual(values = size_class,
+                             guide = "none")
   } else {
     p <- p +
       facet_wrap(~zone, nrow = 2, scales = "free_y") +
-      geom_line(data = d, aes(colour = zone), size = .1) +
-      geom_line(data = kw_df, aes(colour = keyword)) +
-      scale_color_manual(values = all_colors)
+      geom_line(data = d, aes(colour = zone, linewidth = zone)) +
+      geom_line(data = kw_df, aes(colour = keyword), linewidth = size_kw) +
+      scale_color_manual(values = all_colors) +
+      guides(color = guide_legend(override.aes = list(alpha = 1))) +
+      scale_linewidth_manual(values = size_class,
+                             guide = "none")
   }
 
   return(p)
